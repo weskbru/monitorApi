@@ -1,20 +1,25 @@
 package com.monitor.modules.monitoredapi.controllers;
 
+import com.monitor.modules.monitoredapi.dto.ApiCheckResponse;
 import com.monitor.modules.monitoredapi.dto.CreateMonitoredApiRequest;
 import com.monitor.modules.monitoredapi.entity.MonitoredApi;
+import com.monitor.modules.monitoredapi.service.ApiCheckService;
 import com.monitor.modules.monitoredapi.service.MonitoredApiService;
-import com.monitor.modules.monitoredapi.dto.ApiCheckResponse;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/monitored-apis")
 public class MonitoredApiController {
+    
     private final MonitoredApiService monitoredApiService;
+    private final ApiCheckService apiCheckService;
 
-    public MonitoredApiController(MonitoredApiService monitoredApiService) {
+    public MonitoredApiController(MonitoredApiService monitoredApiService, ApiCheckService apiCheckService) {
         this.monitoredApiService = monitoredApiService;
+        this.apiCheckService = apiCheckService;
     }
 
     @PostMapping
@@ -45,6 +50,6 @@ public class MonitoredApiController {
 
     @PostMapping("/{id}/check")
     public ApiCheckResponse checkMonitoredApi(@PathVariable Long id) {
-        return monitoredApiService.check(id);
+        return apiCheckService.check(id);
     }
 }

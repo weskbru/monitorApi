@@ -1,10 +1,6 @@
 package com.monitor.modules.monitoredapi.dto;
 
 import java.time.LocalDateTime;
-import com.monitor.modules.monitoredapi.dto.ApiCheckResponse;
-import com.monitor.modules.monitoredapi.entity.MonitoredApi;
-import com.monitor.modules.monitoredapi.repository.MonitoredApiRepository;
-
 
 public class ApiCheckResponse {
 
