@@ -15,6 +15,7 @@ public class MonitoredApi {
 
     private String name;
     private String url;
+    private String description;
     private Boolean active;
     private LocalDateTime createdAt;
 
@@ -69,5 +70,13 @@ public class MonitoredApi {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+    
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

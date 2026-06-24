@@ -12,6 +12,9 @@ public class CreateMonitoredApiRequest {
     @Pattern(regexp = "^(http|https)://.*$", message = "URL deve começar com http:// ou https://")
     private String url;
 
+    private String description;
+
+
     // Getters and Setters
 
     public String getName() {
@@ -28,6 +31,14 @@ public class CreateMonitoredApiRequest {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
 }
