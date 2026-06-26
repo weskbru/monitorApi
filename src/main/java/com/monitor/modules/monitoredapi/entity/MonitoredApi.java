@@ -18,13 +18,15 @@ public class MonitoredApi {
     private String description;
     private Boolean active;
     private LocalDateTime createdAt;
+    private Long slowThresholdMs; // Novo campo para armazenar o limite de lentidão em milissegundos
 
     // Constructors
     public MonitoredApi(String name, String url) {
         this.name = name;
         this.url = url;
-        this.active = true; // API nasce ativa por padrão
+        this.active = true; 
         this.createdAt = LocalDateTime.now();
+        this.slowThresholdMs = 3000L; 
     }
 
     public MonitoredApi() {
@@ -79,4 +81,14 @@ public class MonitoredApi {
     public void setDescription(String description) {
         this.description = description;
     }
+
+    public Long getSlowThresholdMs() {
+        return slowThresholdMs;
+    }
+
+    public void setSlowThresholdMs(Long slowThresholdMs) {
+        this.slowThresholdMs = slowThresholdMs;
+    }
+
+
 }

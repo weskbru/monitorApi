@@ -4,33 +4,127 @@ Monitor API
 
 # Visao Geral
 
-O Monitor API e um sistema backend para cadastrar APIs e acompanhar se elas estao disponiveis.
+O Monitor API e um sistema backend para acompanhar, de forma externa, se APIs e
+sistemas importantes estao funcionando, lentos ou indisponiveis.
 
-O problema que ele resolve e simples: permitir que uma pessoa ou equipe saiba se uma API cadastrada esta respondendo corretamente e mantenha um historico basico dessas verificacoes.
+O problema que ele resolve nasceu de uma dor real de trabalho: existem sistemas
+rodando em producao, mas a equipe de desenvolvimento nem sempre tem acesso ao
+ambiente de producao e nem sempre recebe informacoes claras da infraestrutura
+quando algo para de funcionar.
 
-O sistema poderia ser utilizado por desenvolvedores, estudantes, pequenas equipes tecnicas ou qualquer pessoa que precise acompanhar a disponibilidade de APIs durante o desenvolvimento ou operacao de sistemas.
+Na pratica, o problema nao e apenas saber se uma URL abre. Muitas vezes o
+sistema parece estar de pe, mas alguma funcionalidade importante falha, uma API
+responde erro, o login nao funciona, ou o sistema fica lento demais. Em varios
+casos, a equipe so descobre que existe problema quando usuarios reclamam.
 
-O valor entregue pela V1 e dar visibilidade sobre o estado atual de APIs monitoradas e registrar o historico das verificacoes realizadas.
+O Monitor API sera um observador externo. Ele nao precisa acessar servidores,
+logs ou banco de dados de producao. Ele apenas chama endpoints importantes dos
+sistemas monitorados e registra o resultado dessas verificacoes.
+
+O valor entregue pela V1 e dar visibilidade operacional basica:
+
+- quais APIs ou sistemas estao sendo monitorados;
+- se o ultimo resultado foi `UP`, `SLOW` ou `DOWN`;
+- qual foi o codigo HTTP retornado;
+- quanto tempo a API demorou para responder;
+- quando cada verificacao aconteceu;
+- qual historico de disponibilidade e lentidao existe para cada API.
 
 Estamos construindo este projeto por dois motivos:
 
-1. Resolver um problema real de monitoramento simples de APIs.
+1. Resolver uma dor real de falta de visibilidade sobre sistemas em producao.
 2. Servir como plataforma de aprendizado para Java, Spring Boot, Arquitetura de Software, Modelagem, Testes e Boas Praticas.
+
+# Dor que o Projeto Soluciona
+
+A dor principal e: a equipe precisa saber se sistemas importantes estao
+funcionando antes de depender apenas de reclamacao de usuarios ou aviso tardio
+da infraestrutura.
+
+Os cenarios mais importantes para este projeto sao:
+
+- a tela ou sistema abre, mas uma API importante falha;
+- o login ou outro fluxo essencial nao funciona;
+- a API responde, mas demora demais;
+- o sistema fica lento a ponto de prejudicar o uso;
+- a equipe nao tem acesso direto ao ambiente de producao;
+- a equipe nao recebe aviso claro quando algo esta indisponivel;
+- a descoberta do problema acontece tarde, quando usuarios ja foram afetados.
+
+Por isso, o Monitor API deve acompanhar endpoints que representem partes
+importantes do sistema, e nao apenas testar se a pagina inicial abre.
+
+Exemplo:
+
+```text
+Sistema Financeiro
+Endpoint monitorado: https://financeiro.empresa.com/api/auth/status
+Status esperado: 200
+Lento acima de: 3000ms
+Timeout: 10000ms
+```
+
+Resultados possiveis:
+
+```text
+UP    - respondeu com o status esperado dentro do tempo aceitavel
+SLOW  - respondeu com o status esperado, mas demorou mais que o limite
+DOWN  - nao respondeu, retornou erro, status inesperado ou timeout
+```
+
+# O Que Estamos Aprendendo
+
+Este projeto tambem e um laboratorio de aprendizado. O objetivo nao e apenas
+criar uma ferramenta pronta, mas entender como um backend real nasce e evolui.
+
+Com ele, vamos aprender:
+
+- Java aplicado a um problema real;
+- Spring Boot para construir APIs REST;
+- modelagem de dominio;
+- separacao entre controller, service, repository, entity e DTO;
+- persistencia com banco de dados;
+- validacoes de entrada;
+- tratamento de erros;
+- consumo de APIs externas via HTTP;
+- medicao de tempo de resposta;
+- classificacao de resultado de negocio, como `UP`, `SLOW` e `DOWN`;
+- historico de eventos;
+- tarefas automaticas/agendadas;
+- testes automatizados;
+- Docker para rodar a aplicacao e dependencias;
+- documentacao da API;
+- evolucao incremental de arquitetura.
+
+O aprendizado mais importante e entender por que cada parte existe. A
+arquitetura deve crescer para resolver problemas reais do projeto, e nao para
+parecer mais sofisticada do que precisa.
 
 # Escopo da V1
 
-A V1 deve ser pequena, funcional e suficiente para aprender os principais conceitos do backend.
+A V1 deve ser pequena, funcional e suficiente para aprender os principais
+conceitos do backend e resolver a primeira versao da dor real: enxergar se APIs
+importantes estao respondendo corretamente, lentas ou fora do ar.
 
 ## Cadastrar uma API para Monitorar
 
 Descricao:
-Permitir o cadastro de uma API com as informacoes necessarias para que ela seja verificada.
+Permitir o cadastro de uma API ou endpoint importante de um sistema.
 
 Objetivo:
 Criar a base do sistema, definindo quais APIs serao acompanhadas.
 
 Valor para o sistema:
 Sem APIs cadastradas, nao existe o que monitorar.
+
+Informacoes minimas esperadas:
+
+- nome;
+- URL;
+- descricao opcional;
+- status HTTP esperado;
+- limite de lentidao;
+- timeout da verificacao.
 
 ## Listar APIs Cadastradas
 
@@ -49,7 +143,8 @@ Descricao:
 Permitir que uma API cadastrada seja verificada manualmente.
 
 Objetivo:
-Validar se uma API esta respondendo no momento da solicitacao.
+Validar se uma API esta respondendo no momento da solicitacao, qual codigo HTTP
+ela retorna e quanto tempo demora para responder.
 
 Valor para o sistema:
 Permite testar o monitoramento sem depender de execucao automatica.
@@ -63,7 +158,25 @@ Objetivo:
 Automatizar o acompanhamento da disponibilidade das APIs.
 
 Valor para o sistema:
-Transforma o sistema em um monitor simples, sem depender de acao manual constante.
+Transforma o sistema em um monitor simples, sem depender de acao manual
+constante.
+
+Observacao:
+Na V1, a verificacao automatica pode usar um intervalo simples e igual para
+todas as APIs. Configuracoes avancadas de agendamento ficam para depois.
+
+## Classificar Resultado da Verificacao
+
+Descricao:
+Classificar cada verificacao como `UP`, `SLOW` ou `DOWN`.
+
+Objetivo:
+Representar melhor a dor real, porque uma API pode estar respondendo, mas lenta
+demais para ser considerada saudavel.
+
+Valor para o sistema:
+Evita uma leitura simplista de disponibilidade baseada apenas em verdadeiro ou
+falso.
 
 ## Salvar Historico de Verificacoes
 
@@ -74,7 +187,8 @@ Objetivo:
 Permitir consulta posterior sobre o comportamento das APIs monitoradas.
 
 Valor para o sistema:
-Cria memoria historica e permite analisar se uma API esteve disponivel ou indisponivel ao longo do tempo.
+Cria memoria historica e permite analisar se uma API esteve disponivel, lenta
+ou indisponivel ao longo do tempo.
 
 ## Retornar Status Atual
 
@@ -82,7 +196,7 @@ Descricao:
 Informar o estado mais recente de uma API monitorada.
 
 Objetivo:
-Mostrar rapidamente se a API esta disponivel ou indisponivel.
+Mostrar rapidamente se a API esta `UP`, `SLOW` ou `DOWN`.
 
 Valor para o sistema:
 Entrega a informacao mais importante para quem consulta o monitoramento.
@@ -129,6 +243,8 @@ A V1 sera considerada concluida quando:
 - for possivel executar uma verificacao manual;
 - existir verificacao automatica periodica;
 - cada verificacao gerar um registro de historico;
+- cada verificacao registrar codigo HTTP, tempo de resposta e data/hora;
+- cada verificacao for classificada como `UP`, `SLOW` ou `DOWN`;
 - for possivel consultar o status atual de uma API;
 - a documentacao da API estiver disponivel;
 - os principais fluxos tiverem testes;

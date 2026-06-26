@@ -1,6 +1,7 @@
 package com.monitor.modules.monitoredapi.dto;
 
 import java.time.LocalDateTime;
+import com.monitor.modules.monitoredapi.CheckStatus;
 
 public class ApiCheckResponse {
 
@@ -12,12 +13,17 @@ public class ApiCheckResponse {
     private Long responseTimeMs;
     private LocalDateTime checkedAt;
     private String errorMessage;
+    private CheckStatus status;
+    private String message;
+
 
     public ApiCheckResponse(
             Long apiId,
             String name,
             String url,
             Boolean available,
+            CheckStatus status,
+            String message,
             Integer statusCode,
             Long responseTimeMs,
             LocalDateTime checkedAt,
@@ -26,6 +32,8 @@ public class ApiCheckResponse {
         this.name = name;
         this.url = url;
         this.available = available;
+        this.status = status;
+        this.message = message;
         this.statusCode = statusCode;
         this.responseTimeMs = responseTimeMs;
         this.checkedAt = checkedAt;
@@ -94,5 +102,21 @@ public class ApiCheckResponse {
 
     public void setErrorMessage(String errorMessage) {
         this.errorMessage = errorMessage;
+    }
+
+    public CheckStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(CheckStatus status) {
+        this.status = status;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 }

@@ -8,11 +8,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
+import com.monitor.modules.monitoredapi.CheckStatus;
 
 import java.time.LocalDateTime;
 
 @Service
 public class ApiCheckService {
+
+    private static final long DEFAULT_SLOW_THRESHOLD_MS = 3000L;
 
     private final ApiCheckHistoryRepository apiCheckHistoryRepository;
     private final RestTemplate restTemplate = new RestTemplate();
@@ -35,13 +38,18 @@ public class ApiCheckService {
             boolean available = response.getStatusCode().is2xxSuccessful();
             int statusCode = response.getStatusCode().value();
 
-            saveCheckHistory(api, available, statusCode, responseTime, checkedAt, null);
+            CheckStatus status = classifyStatus(available, responseTime, api.getSlowThresholdMs());
+            String message = buildMessage(status);
+
+            saveCheckHistory(api, available, status, statusCode, responseTime, checkedAt, null);
 
             return new ApiCheckResponse(
                     api.getId(),
                     api.getName(),
                     api.getUrl(),
                     available,
+                    status,
+                    message,
                     statusCode,
                     responseTime,
                     checkedAt,
@@ -52,14 +60,18 @@ public class ApiCheckService {
             LocalDateTime checkedAt = LocalDateTime.now();
             int statusCode = exception.getStatusCode().value();
             String errorMessage = exception.getMessage();
+            CheckStatus status = CheckStatus.DOWN;
+            String message = buildMessage(status);
 
-            saveCheckHistory(api, false, statusCode, responseTime, checkedAt, errorMessage);
+            saveCheckHistory(api, false, status, statusCode, responseTime, checkedAt, errorMessage);
 
             return new ApiCheckResponse(
                     api.getId(),
                     api.getName(),
                     api.getUrl(),
                     false,
+                    status,
+                    message,
                     statusCode,
                     responseTime,
                     checkedAt,
@@ -69,18 +81,23 @@ public class ApiCheckService {
             long responseTime = System.currentTimeMillis() - startTime;
             LocalDateTime checkedAt = LocalDateTime.now();
             String errorMessage = exception.getMessage();
+            CheckStatus status = CheckStatus.DOWN;
+            String message = buildMessage(status);
 
-            saveCheckHistory(api, false, null, responseTime, checkedAt, errorMessage);
+            saveCheckHistory(api, false, status, null, responseTime, checkedAt, errorMessage);
 
             return new ApiCheckResponse(
                     api.getId(),
                     api.getName(),
                     api.getUrl(),
                     false,
+                    status,
+                    message,
                     null,
                     responseTime,
                     checkedAt,
                     errorMessage
+                    
             );
         }
     }
@@ -88,6 +105,7 @@ public class ApiCheckService {
     private void saveCheckHistory(
             MonitoredApi api,
             Boolean available,
+            CheckStatus status,
             Integer statusCode,
             Long responseTime,
             LocalDateTime checkedAt,
@@ -95,6 +113,7 @@ public class ApiCheckService {
         ApiCheckHistory history = new ApiCheckHistory();
         history.setMonitoredApi(api);
         history.setAvailable(available);
+        history.setStatus(status);
         history.setStatusCode(statusCode);
         history.setResponseTimeMs(responseTime);
         history.setCheckedAt(checkedAt);
@@ -103,5 +122,29 @@ public class ApiCheckService {
         apiCheckHistoryRepository.save(history);
     }
 
+
+    private CheckStatus classifyStatus(Boolean available, Long responseTime, Long slowThresholdMs) {
+        Long threshold = slowThresholdMs != null ? slowThresholdMs : DEFAULT_SLOW_THRESHOLD_MS;
+
+        if (!available) {
+            return CheckStatus.DOWN;
+        }
+
+        if (responseTime > threshold) {
+            return CheckStatus.SLOW;
+        }
+
+        return CheckStatus.UP;
+    }
+
+    private String buildMessage(CheckStatus status) {
+        if (status == CheckStatus.DOWN) {
+            return "O endpoint não está disponível.";
+        } else if (status == CheckStatus.SLOW) {
+            return "O endpoint respondeu, mas está lento.";
+        } else {
+            return "O endpoint respondeu normalmente.";
+        }
+    }
 
 }

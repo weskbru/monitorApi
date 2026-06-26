@@ -6,6 +6,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import com.monitor.modules.monitoredapi.CheckStatus;
 
 import java.time.LocalDateTime;
 
@@ -14,6 +17,9 @@ public class ApiCheckHistory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Enumerated(EnumType.STRING)
+    private CheckStatus status;
 
 
     private Boolean available;
@@ -83,5 +89,14 @@ public class ApiCheckHistory {
     public void setMonitoredApi(MonitoredApi monitoredApi) {
         this.monitoredApi = monitoredApi;
     }
+
+    public CheckStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(CheckStatus status) {
+        this.status = status;
+    }
+    
     
 }

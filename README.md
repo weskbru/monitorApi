@@ -1,9 +1,25 @@
 # Monitor API
 
-Backend em Spring Boot para cadastrar APIs e acompanhar a disponibilidade delas.
+Backend em Spring Boot para cadastrar APIs e acompanhar se sistemas importantes
+estao funcionando, lentos ou indisponiveis.
+
+O projeto nasceu de uma dor real: alguns sistemas rodam em producao, mas a
+equipe de desenvolvimento nao tem visibilidade suficiente sobre o ambiente e so
+descobre problemas quando usuarios reclamam ou quando a infraestrutura avisa
+tarde demais.
+
+O Monitor API atua como um observador externo. Ele chama endpoints importantes,
+mede tempo de resposta, registra o resultado e ajuda a responder perguntas como:
+
+- a API esta respondendo?
+- ela retornou o status esperado?
+- ela esta lenta demais?
+- quando ela falhou ou voltou a funcionar?
 
 Este projeto tambem esta sendo usado como laboratorio de aprendizado em Java,
 Spring Boot, API REST, persistencia, validacoes, Docker e boas praticas.
+
+A visao completa do produto esta em `docs/PROJECT_VISION.md`.
 
 ## O que foi criado ate agora
 
