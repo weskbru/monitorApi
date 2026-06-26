@@ -1,5 +1,6 @@
 package com.monitor.modules.monitoredapi.service;
 
+import com.monitor.modules.monitoredapi.dto.ApiCheckHistoryResponse;
 import com.monitor.modules.monitoredapi.dto.ApiCheckResponse;
 import com.monitor.modules.monitoredapi.entity.ApiCheckHistory;
 import com.monitor.modules.monitoredapi.entity.MonitoredApi;
@@ -11,6 +12,7 @@ import org.springframework.web.client.RestTemplate;
 import com.monitor.modules.monitoredapi.CheckStatus;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class ApiCheckService {
@@ -145,6 +147,38 @@ public class ApiCheckService {
         } else {
             return "O endpoint respondeu normalmente.";
         }
+    }
+
+    public List<ApiCheckHistoryResponse> getHistory(Long id) {
+        MonitoredApi api = monitoredApiService.getById(id);
+
+        return apiCheckHistoryRepository
+                .findByMonitoredApiIdOrderByCheckedAtDesc(api.getId())
+                .stream()
+                .map(this::toHistoryResponse)
+                .toList();
+    }
+
+    public ApiCheckHistoryResponse getCurrentStatus(Long id) {
+        MonitoredApi api = monitoredApiService.getById(id);
+
+        return apiCheckHistoryRepository
+                .findFirstByMonitoredApiIdOrderByCheckedAtDesc(api.getId())
+                .map(this::toHistoryResponse)
+                .orElseThrow(() -> new RuntimeException("Nenhuma verificacao encontrada para a API com id: " + id));
+    }
+
+    private ApiCheckHistoryResponse toHistoryResponse(ApiCheckHistory history) {
+        return new ApiCheckHistoryResponse(
+                history.getId(),
+                history.getStatus(),
+                buildMessage(history.getStatus()),
+                history.getAvailable(),
+                history.getStatusCode(),
+                history.getResponseTimeMs(),
+                history.getCheckedAt(),
+                history.getErrorMessage()
+        );
     }
 
 }

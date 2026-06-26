@@ -34,6 +34,10 @@ A visao completa do produto esta em `docs/PROJECT_VISION.md`.
 - Validacoes com Bean Validation.
 - Cadastro, listagem, busca por id, atualizacao e remocao de APIs monitoradas.
 - Verificacao manual de disponibilidade de uma API cadastrada.
+- Classificacao da verificacao como `UP`, `SLOW` ou `DOWN`.
+- Mensagem amigavel para explicar o resultado da verificacao.
+- Historico de verificacoes por API monitorada.
+- Consulta do status atual, baseada na ultima verificacao salva.
 - Tratamento global de erros de validacao.
 - Documentacao OpenAPI em `/v3/api-docs`.
 - Swagger UI estatico em `/swagger-ui/index.html`.
@@ -135,7 +139,8 @@ POST /api/monitored-apis/{id}/check
 ```
 
 Esse endpoint busca a API cadastrada pelo `id`, faz uma chamada HTTP para a URL
-salva e retorna o resultado da verificacao.
+salva, mede o tempo de resposta, classifica o resultado e salva um registro no
+historico.
 
 Exemplo de resposta para uma API disponivel:
 
@@ -145,6 +150,8 @@ Exemplo de resposta para uma API disponivel:
   "name": "httpbin",
   "url": "https://httpbin.org",
   "available": true,
+  "status": "UP",
+  "message": "O endpoint respondeu normalmente.",
   "statusCode": 200,
   "responseTimeMs": 796,
   "checkedAt": "2026-06-24T01:34:53.935211809",
@@ -158,10 +165,76 @@ Campos da resposta:
 - `name`: nome da API cadastrada.
 - `url`: URL testada.
 - `available`: indica se a API respondeu com sucesso.
+- `status`: status de negocio da verificacao: `UP`, `SLOW` ou `DOWN`.
+- `message`: mensagem amigavel sobre o resultado.
 - `statusCode`: codigo HTTP retornado pela API testada.
 - `responseTimeMs`: tempo de resposta em milissegundos.
 - `checkedAt`: data e hora da verificacao.
 - `errorMessage`: mensagem de erro, quando a verificacao falha.
+
+Regras atuais de classificacao:
+
+- `UP`: endpoint respondeu com sucesso dentro do tempo esperado.
+- `SLOW`: endpoint respondeu com sucesso, mas demorou mais que 3000ms.
+- `DOWN`: endpoint nao respondeu corretamente, retornou erro ou falhou na chamada.
+
+### Consultar historico de verificacoes
+
+```http
+GET /api/monitored-apis/{id}/history
+```
+
+Esse endpoint consulta os registros de verificacao ja salvos para uma API
+monitorada. Ele nao executa uma nova verificacao.
+
+Exemplo de resposta:
+
+```json
+[
+  {
+    "id": 6,
+    "status": "SLOW",
+    "message": "O endpoint respondeu, mas esta lento.",
+    "available": true,
+    "statusCode": 200,
+    "responseTimeMs": 5769,
+    "checkedAt": "2026-06-26T02:10:48.309818",
+    "errorMessage": null
+  }
+]
+```
+
+Os registros sao retornados do mais recente para o mais antigo.
+
+### Consultar status atual
+
+```http
+GET /api/monitored-apis/{id}/status
+```
+
+Esse endpoint consulta a ultima verificacao salva para uma API monitorada. Ele
+nao chama a API externa novamente e nao cria um novo registro de historico.
+
+Exemplo de resposta:
+
+```json
+{
+  "id": 6,
+  "status": "SLOW",
+  "message": "O endpoint respondeu, mas esta lento.",
+  "available": true,
+  "statusCode": 200,
+  "responseTimeMs": 5769,
+  "checkedAt": "2026-06-26T02:10:48.309818",
+  "errorMessage": null
+}
+```
+
+Resumo da diferenca entre endpoints:
+
+- `POST /api/monitored-apis/{id}/check`: executa uma nova verificacao.
+- `GET /api/monitored-apis/{id}/status`: consulta a ultima verificacao salva.
+- `GET /api/monitored-apis/{id}/history`: consulta o historico de verificacoes.
 
 ## Metodos implementados no modulo `MonitoredApi`
 
@@ -173,6 +246,8 @@ Controller:
 - `PUT /api/monitored-apis/{id}`: chama `updateMonitoredApi`.
 - `DELETE /api/monitored-apis/{id}`: chama `deleteMonitoredApi`.
 - `POST /api/monitored-apis/{id}/check`: chama `checkMonitoredApi`.
+- `GET /api/monitored-apis/{id}/status`: chama `getCurrentStatus`.
+- `GET /api/monitored-apis/{id}/history`: chama `getHistory`.
 
 Service:
 
@@ -182,11 +257,14 @@ Service:
 - `update(id, name, url, description)`: atualiza nome, URL e descricao.
 - `delete(id)`: remove uma API monitorada.
 - `check(id)`: executa a verificacao manual da URL cadastrada.
+- `getCurrentStatus(id)`: consulta a ultima verificacao salva.
+- `getHistory(id)`: consulta o historico de verificacoes.
 
 Repository:
 
 - `MonitoredApiRepository extends JpaRepository<MonitoredApi, Long>`.
 - Ja herda metodos como `save`, `findAll`, `findById` e `delete`.
+- `ApiCheckHistoryRepository` busca historico por API monitorada.
 
 ## Erros de validacao
 
@@ -222,10 +300,13 @@ Exemplo de resposta:
 - Repository: acessa o banco usando Spring Data JPA.
 - Entity: representa uma tabela no banco.
 - DTO: representa os dados de entrada da API.
+- DTO de saida: controla quais dados sao devolvidos para quem consome a API.
 - Persistencia: salvar e buscar dados no PostgreSQL.
 - Bean Validation: validar dados com anotacoes como `@NotBlank` e `@Pattern`.
 - `@Valid`: manda o Spring validar o DTO antes de chamar o service.
 - `@RestControllerAdvice`: centraliza tratamento de erros dos controllers.
+- Enum: representa um conjunto fechado de estados, como `UP`, `SLOW` e `DOWN`.
+- Query methods: metodos do Spring Data JPA gerados a partir do nome.
 - Docker Compose: sobe API e banco juntos para desenvolvimento.
 
 ## Como rodar
@@ -260,6 +341,10 @@ http://localhost:8090/v3/api-docs
 - Atualizacao de API cadastrada.
 - Remocao de API cadastrada.
 - Verificacao manual com API real usando `POST /api/monitored-apis/{id}/check`.
+- Classificacao `UP` com endpoint rapido.
+- Classificacao `SLOW` com endpoint de delay.
+- Consulta de historico com `GET /api/monitored-apis/{id}/history`.
+- Consulta de status atual com `GET /api/monitored-apis/{id}/status`.
 - Validacao de `name` vazio.
 - Validacao de `url` vazia.
 - Validacao de URL sem `http://` ou `https://`.
@@ -270,5 +355,4 @@ http://localhost:8090/v3/api-docs
 
 - Melhorar erro de busca por id inexistente para retornar `404 Not Found`.
 - Criar testes automatizados.
-- Salvar historico das verificacoes.
 - Implementar verificacao automatica periodica.

@@ -1,5 +1,6 @@
 package com.monitor.modules.monitoredapi.controllers;
 
+import com.monitor.modules.monitoredapi.dto.ApiCheckHistoryResponse;
 import com.monitor.modules.monitoredapi.dto.ApiCheckResponse;
 import com.monitor.modules.monitoredapi.dto.CreateMonitoredApiRequest;
 import com.monitor.modules.monitoredapi.entity.MonitoredApi;
@@ -52,4 +53,15 @@ public class MonitoredApiController {
     public ApiCheckResponse checkMonitoredApi(@PathVariable Long id) {
         return apiCheckService.check(id);
     }
+
+    @GetMapping("/{id}/history")
+    public List<ApiCheckHistoryResponse> getHistory(@PathVariable Long id) {
+        return apiCheckService.getHistory(id);
+    }
+
+    @GetMapping("/{id}/status")
+    public ApiCheckHistoryResponse getCurrentStatus(@PathVariable Long id) {
+        return apiCheckService.getCurrentStatus(id);
+    }
+                        
 }
