@@ -5,6 +5,7 @@ import com.monitor.modules.monitoredapi.dto.ApiCheckResponse;
 import com.monitor.modules.monitoredapi.entity.ApiCheckHistory;
 import com.monitor.modules.monitoredapi.entity.MonitoredApi;
 import com.monitor.modules.monitoredapi.repository.ApiCheckHistoryRepository;
+import com.monitor.modules.monitoredapi.exception.ApiCheckHistoryNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientResponseException;
@@ -165,7 +166,7 @@ public class ApiCheckService {
         return apiCheckHistoryRepository
                 .findFirstByMonitoredApiIdOrderByCheckedAtDesc(api.getId())
                 .map(this::toHistoryResponse)
-                .orElseThrow(() -> new RuntimeException("Nenhuma verificacao encontrada para a API com id: " + id));
+                .orElseThrow(() -> new ApiCheckHistoryNotFoundException(id));
     }
 
     private ApiCheckHistoryResponse toHistoryResponse(ApiCheckHistory history) {
@@ -180,5 +181,7 @@ public class ApiCheckService {
                 history.getErrorMessage()
         );
     }
+
+    
 
 }

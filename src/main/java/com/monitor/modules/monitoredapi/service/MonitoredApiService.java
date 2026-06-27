@@ -1,6 +1,8 @@
 package com.monitor.modules.monitoredapi.service;
 
 import com.monitor.modules.monitoredapi.entity.MonitoredApi;
+import com.monitor.modules.monitoredapi.exception.MonitoredApiNotFoundException;
+
 import com.monitor.modules.monitoredapi.repository.MonitoredApiRepository;
 import org.springframework.stereotype.Service;
 
@@ -28,7 +30,7 @@ public class MonitoredApiService {
 
     public MonitoredApi getById(Long id) {
         return monitoredApiRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("API nao encontrada com Id: " + id));
+                .orElseThrow(() -> new MonitoredApiNotFoundException(id));
     }
 
     public void delete(Long id) {

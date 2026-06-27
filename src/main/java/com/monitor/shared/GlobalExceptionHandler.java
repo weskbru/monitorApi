@@ -1,5 +1,7 @@
 package com.monitor.shared;
 
+import com.monitor.modules.monitoredapi.exception.MonitoredApiNotFoundException;
+import com.monitor.modules.monitoredapi.exception.ApiCheckHistoryNotFoundException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -12,6 +14,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(MonitoredApiNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleMonitoredApiNotFound(MonitoredApiNotFoundException exception) {
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("message", exception.getMessage());
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationErrors(MethodArgumentNotValidException exception) {
@@ -26,5 +36,13 @@ public class GlobalExceptionHandler {
         response.put("errors", errors);
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(ApiCheckHistoryNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleApiCheckHistoryNotFound(ApiCheckHistoryNotFoundException exception) {
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("message", exception.getMessage());
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 }
