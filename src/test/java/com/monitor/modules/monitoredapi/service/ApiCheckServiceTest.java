@@ -6,6 +6,7 @@ import com.monitor.modules.monitoredapi.dto.ApiCheckResponse;
 import com.monitor.modules.monitoredapi.entity.ApiCheckHistory;
 import com.monitor.modules.monitoredapi.entity.MonitoredApi;
 import com.monitor.modules.monitoredapi.exception.ApiCheckHistoryNotFoundException;
+import com.monitor.modules.monitoredapi.exception.MonitoredApiInactiveException;
 import com.monitor.modules.monitoredapi.repository.ApiCheckHistoryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
@@ -108,6 +110,21 @@ class ApiCheckServiceTest {
         assertEquals(500, history.getStatusCode());
 
         server.verify();
+    }
+
+    @Test
+    void shouldThrowExceptionWhenMonitoredApiIsInactive() {
+        Long id = 1L;
+        MonitoredApi api = createApi(id);
+        api.setActive(false);
+
+        when(monitoredApiService.getById(id)).thenReturn(api);
+
+        assertThrows(MonitoredApiInactiveException.class, () -> {
+            apiCheckService.check(id);
+        });
+
+        verify(apiCheckHistoryRepository, never()).save(org.mockito.ArgumentMatchers.any(ApiCheckHistory.class));
     }
 
     @Test

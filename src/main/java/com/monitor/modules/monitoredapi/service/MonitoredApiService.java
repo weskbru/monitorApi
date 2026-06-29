@@ -46,4 +46,10 @@ public class MonitoredApiService {
         return monitoredApiRepository.save(api);
     }
 
+    public MonitoredApi updateActive(Long id, Boolean active) {
+        MonitoredApi api = getById(id);
+        api.setActive(active);
+        return monitoredApiRepository.save(api);
+    }
+
 }

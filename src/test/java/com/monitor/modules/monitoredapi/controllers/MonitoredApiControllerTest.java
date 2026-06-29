@@ -6,6 +6,7 @@ import com.monitor.modules.monitoredapi.dto.ApiCheckHistoryResponse;
 import com.monitor.modules.monitoredapi.dto.ApiCheckResponse;
 import com.monitor.modules.monitoredapi.entity.MonitoredApi;
 import com.monitor.modules.monitoredapi.exception.ApiCheckHistoryNotFoundException;
+import com.monitor.modules.monitoredapi.exception.MonitoredApiInactiveException;
 import com.monitor.modules.monitoredapi.exception.MonitoredApiNotFoundException;
 import com.monitor.modules.monitoredapi.service.ApiCheckService;
 import com.monitor.modules.monitoredapi.service.MonitoredApiService;
@@ -28,6 +29,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -149,6 +151,47 @@ class MonitoredApiControllerTest {
     }
 
     @Test
+    void shouldUpdateActiveStatus() throws Exception {
+        MonitoredApi updatedApi = createApi(1L);
+        updatedApi.setActive(false);
+
+        when(monitoredApiService.updateActive(eq(1L), eq(false))).thenReturn(updatedApi);
+
+        Map<String, Boolean> request = Map.of("active", false);
+
+        mockMvc.perform(patch("/api/monitored-apis/1/active")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.active").value(false));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenActiveStatusIsMissing() throws Exception {
+        mockMvc.perform(patch("/api/monitored-apis/1/active")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Erro de validacao"))
+                .andExpect(jsonPath("$.errors.active").exists());
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenUpdatingActiveStatusForMissingApi() throws Exception {
+        when(monitoredApiService.updateActive(eq(999L), eq(false)))
+                .thenThrow(new MonitoredApiNotFoundException(999L));
+
+        Map<String, Boolean> request = Map.of("active", false);
+
+        mockMvc.perform(patch("/api/monitored-apis/999/active")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("API nao encontrada com id: 999"));
+    }
+
+    @Test
     void shouldDeleteMonitoredApi() throws Exception {
         doNothing().when(monitoredApiService).delete(1L);
 
@@ -188,6 +231,15 @@ class MonitoredApiControllerTest {
                 .andExpect(jsonPath("$.status").value("UP"))
                 .andExpect(jsonPath("$.available").value(true))
                 .andExpect(jsonPath("$.statusCode").value(200));
+    }
+
+    @Test
+    void shouldReturnConflictWhenCheckingInactiveMonitoredApi() throws Exception {
+        when(apiCheckService.check(1L)).thenThrow(new MonitoredApiInactiveException(1L));
+
+        mockMvc.perform(post("/api/monitored-apis/1/check"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("API inativa nao pode ser verificada: 1"));
     }
 
     @Test

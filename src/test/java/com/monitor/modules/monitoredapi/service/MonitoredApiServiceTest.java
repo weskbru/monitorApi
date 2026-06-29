@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -138,6 +139,25 @@ class MonitoredApiServiceTest {
         assertEquals("ViaCEP Atualizada", api.getName());
         assertEquals("https://viacep.com.br/ws/01001000/json/", api.getUrl());
         assertEquals("Descricao atualizada", api.getDescription());
+        verify(monitoredApiRepository).save(api);
+    }
+
+    @Test
+    void shouldUpdateActiveStatusWhenMonitoredApiExists() {
+        MonitoredApiRepository monitoredApiRepository = mock(MonitoredApiRepository.class);
+        MonitoredApiService monitoredApiService = new MonitoredApiService(monitoredApiRepository);
+
+        Long id = 1L;
+        MonitoredApi api = new MonitoredApi("ViaCEP", "https://viacep.com.br/ws/01001000/json/");
+        api.setId(id);
+
+        when(monitoredApiRepository.findById(id)).thenReturn(Optional.of(api));
+        when(monitoredApiRepository.save(api)).thenReturn(api);
+
+        MonitoredApi result = monitoredApiService.updateActive(id, false);
+
+        assertEquals(api, result);
+        assertFalse(api.getActive());
         verify(monitoredApiRepository).save(api);
     }
 }

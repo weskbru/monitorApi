@@ -1,16 +1,18 @@
 package com.monitor.modules.monitoredapi.service;
 
+import com.monitor.modules.monitoredapi.CheckStatus;
 import com.monitor.modules.monitoredapi.dto.ApiCheckHistoryResponse;
 import com.monitor.modules.monitoredapi.dto.ApiCheckResponse;
 import com.monitor.modules.monitoredapi.entity.ApiCheckHistory;
 import com.monitor.modules.monitoredapi.entity.MonitoredApi;
-import com.monitor.modules.monitoredapi.repository.ApiCheckHistoryRepository;
 import com.monitor.modules.monitoredapi.exception.ApiCheckHistoryNotFoundException;
+import com.monitor.modules.monitoredapi.exception.MonitoredApiInactiveException;
+import com.monitor.modules.monitoredapi.repository.ApiCheckHistoryRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
-import com.monitor.modules.monitoredapi.CheckStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,85 +26,112 @@ public class ApiCheckService {
     private final RestTemplate restTemplate = new RestTemplate();
     private final MonitoredApiService monitoredApiService;
 
-
-    public ApiCheckService(ApiCheckHistoryRepository apiCheckHistoryRepository, MonitoredApiService monitoredApiService) {
+    public ApiCheckService(
+            ApiCheckHistoryRepository apiCheckHistoryRepository,
+            MonitoredApiService monitoredApiService
+    ) {
         this.apiCheckHistoryRepository = apiCheckHistoryRepository;
         this.monitoredApiService = monitoredApiService;
     }
 
     public ApiCheckResponse check(Long id) {
         MonitoredApi api = monitoredApiService.getById(id);
+
+        validateApiCanBeChecked(api);
+
         long startTime = System.currentTimeMillis();
+        LocalDateTime checkedAt = LocalDateTime.now();
 
         try {
             ResponseEntity<String> response = restTemplate.getForEntity(api.getUrl(), String.class);
-            long responseTime = System.currentTimeMillis() - startTime;
-            LocalDateTime checkedAt = LocalDateTime.now();
+
+            long responseTime = calculateResponseTime(startTime);
             boolean available = response.getStatusCode().is2xxSuccessful();
             int statusCode = response.getStatusCode().value();
 
-            CheckStatus status = classifyStatus(available, responseTime, api.getSlowThresholdMs());
-            String message = buildMessage(status);
-
-            saveCheckHistory(api, available, status, statusCode, responseTime, checkedAt, null);
-
-            return new ApiCheckResponse(
-                    api.getId(),
-                    api.getName(),
-                    api.getUrl(),
+            return registerResult(
+                    api,
                     available,
-                    status,
-                    message,
                     statusCode,
                     responseTime,
                     checkedAt,
                     null
             );
+
         } catch (RestClientResponseException exception) {
-            long responseTime = System.currentTimeMillis() - startTime;
-            LocalDateTime checkedAt = LocalDateTime.now();
-            int statusCode = exception.getStatusCode().value();
-            String errorMessage = exception.getMessage();
-            CheckStatus status = CheckStatus.DOWN;
-            String message = buildMessage(status);
+            long responseTime = calculateResponseTime(startTime);
 
-            saveCheckHistory(api, false, status, statusCode, responseTime, checkedAt, errorMessage);
-
-            return new ApiCheckResponse(
-                    api.getId(),
-                    api.getName(),
-                    api.getUrl(),
+            return registerResult(
+                    api,
                     false,
-                    status,
-                    message,
-                    statusCode,
+                    exception.getStatusCode().value(),
                     responseTime,
                     checkedAt,
-                    errorMessage
+                    exception.getMessage()
             );
-        } catch (Exception exception) {
-            long responseTime = System.currentTimeMillis() - startTime;
-            LocalDateTime checkedAt = LocalDateTime.now();
-            String errorMessage = exception.getMessage();
-            CheckStatus status = CheckStatus.DOWN;
-            String message = buildMessage(status);
 
-            saveCheckHistory(api, false, status, null, responseTime, checkedAt, errorMessage);
+        } catch (RestClientException exception) {
+            long responseTime = calculateResponseTime(startTime);
 
-            return new ApiCheckResponse(
-                    api.getId(),
-                    api.getName(),
-                    api.getUrl(),
+            return registerResult(
+                    api,
                     false,
-                    status,
-                    message,
                     null,
                     responseTime,
                     checkedAt,
-                    errorMessage
-                    
+                    exception.getMessage()
             );
         }
+    }
+
+    private void validateApiCanBeChecked(MonitoredApi api) {
+        if (!Boolean.TRUE.equals(api.getActive())) {
+            throw new MonitoredApiInactiveException(api.getId());
+        }
+    }
+
+    private long calculateResponseTime(long startTime) {
+        return System.currentTimeMillis() - startTime;
+    }
+
+    private ApiCheckResponse registerResult(
+            MonitoredApi api,
+            boolean available,
+            Integer statusCode,
+            long responseTime,
+            LocalDateTime checkedAt,
+            String errorMessage
+    ) {
+        CheckStatus status = classifyStatus(
+                available,
+                responseTime,
+                api.getSlowThresholdMs()
+        );
+
+        String message = buildMessage(status);
+
+        saveCheckHistory(
+                api,
+                available,
+                status,
+                statusCode,
+                responseTime,
+                checkedAt,
+                errorMessage
+        );
+
+        return new ApiCheckResponse(
+                api.getId(),
+                api.getName(),
+                api.getUrl(),
+                available,
+                status,
+                message,
+                statusCode,
+                responseTime,
+                checkedAt,
+                errorMessage
+        );
     }
 
     private void saveCheckHistory(
@@ -112,7 +141,8 @@ public class ApiCheckService {
             Integer statusCode,
             Long responseTime,
             LocalDateTime checkedAt,
-            String errorMessage) {
+            String errorMessage
+    ) {
         ApiCheckHistory history = new ApiCheckHistory();
         history.setMonitoredApi(api);
         history.setAvailable(available);
@@ -125,9 +155,14 @@ public class ApiCheckService {
         apiCheckHistoryRepository.save(history);
     }
 
-
-    private CheckStatus classifyStatus(Boolean available, Long responseTime, Long slowThresholdMs) {
-        Long threshold = slowThresholdMs != null ? slowThresholdMs : DEFAULT_SLOW_THRESHOLD_MS;
+    private CheckStatus classifyStatus(
+            Boolean available,
+            Long responseTime,
+            Long slowThresholdMs
+    ) {
+        Long threshold = slowThresholdMs != null
+                ? slowThresholdMs
+                : DEFAULT_SLOW_THRESHOLD_MS;
 
         if (!available) {
             return CheckStatus.DOWN;
@@ -143,11 +178,13 @@ public class ApiCheckService {
     private String buildMessage(CheckStatus status) {
         if (status == CheckStatus.DOWN) {
             return "O endpoint não está disponível.";
-        } else if (status == CheckStatus.SLOW) {
-            return "O endpoint respondeu, mas está lento.";
-        } else {
-            return "O endpoint respondeu normalmente.";
         }
+
+        if (status == CheckStatus.SLOW) {
+            return "O endpoint respondeu, mas está lento.";
+        }
+
+        return "O endpoint respondeu normalmente.";
     }
 
     public List<ApiCheckHistoryResponse> getHistory(Long id) {
@@ -181,7 +218,4 @@ public class ApiCheckService {
                 history.getErrorMessage()
         );
     }
-
-    
-
 }

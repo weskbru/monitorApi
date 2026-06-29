@@ -6,6 +6,7 @@ import com.monitor.modules.monitoredapi.dto.CreateMonitoredApiRequest;
 import com.monitor.modules.monitoredapi.entity.MonitoredApi;
 import com.monitor.modules.monitoredapi.service.ApiCheckService;
 import com.monitor.modules.monitoredapi.service.MonitoredApiService;
+import com.monitor.modules.monitoredapi.dto.UpdateMonitoredApiActiveRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -91,6 +92,17 @@ public class MonitoredApiController {
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "API monitorada ou status atual nao encontrado")
     public ApiCheckHistoryResponse getCurrentStatus(@PathVariable Long id) {
         return apiCheckService.getCurrentStatus(id);
+    }
+
+    @PatchMapping("/{id}/active")
+    @Operation(summary = "Ativar ou desativar API monitorada")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Status ativo atualizado")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Dados invalidos")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "API monitorada nao encontrada")
+    public MonitoredApi updateActive(
+        @PathVariable Long id,
+        @Valid @RequestBody UpdateMonitoredApiActiveRequest request) {
+        return monitoredApiService.updateActive(id, request.getActive());
     }
                         
 }
