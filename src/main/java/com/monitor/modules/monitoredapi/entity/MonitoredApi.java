@@ -18,7 +18,7 @@ public class MonitoredApi {
     private String description;
     private Boolean active;
     private LocalDateTime createdAt;
-    private Long slowThresholdMs; // Novo campo para armazenar o limite de lentidão em milissegundos
+    private Long slowThresholdMs = 3000L; // Novo campo para armazenar o limite de lentidão em milissegundos
 
     // Constructors
     public MonitoredApi(String name, String url) {

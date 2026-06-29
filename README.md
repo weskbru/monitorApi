@@ -236,6 +236,48 @@ Resumo da diferenca entre endpoints:
 - `GET /api/monitored-apis/{id}/status`: consulta a ultima verificacao salva.
 - `GET /api/monitored-apis/{id}/history`: consulta o historico de verificacoes.
 
+## Decisao tecnica: estado atual e historico
+
+Para evitar crescimento excessivo da tabela de historico, o projeto deve separar
+o estado atual da API monitorada do historico de eventos.
+
+Regra mental:
+
+- `ApiCurrentStatus` mostra o agora.
+- `ApiCheckHistory` explica quando algo mudou ou registra uma amostra periodica.
+
+Toda verificacao deve atualizar `ApiCurrentStatus`.
+
+`ApiCheckHistory` so deve ser salvo quando houver mudanca relevante ou amostra
+periodica.
+
+Uma mudanca e considerada relevante quando:
+
+- o status de negocio mudou;
+- a categoria do `statusCode` mudou;
+- a `errorMessage` mudou;
+- passou 1 hora desde a ultima amostra salva.
+
+Se mais de uma mudanca acontecer na mesma verificacao, deve ser salvo apenas um
+registro de historico com todos os motivos.
+
+Categorias de `statusCode`:
+
+- `null`: sem resposta.
+- `1xx`: informativo.
+- `2xx`: sucesso.
+- `3xx`: redirecionamento.
+- `4xx`: erro do cliente.
+- `5xx`: erro do servidor.
+- `outros`: desconhecido.
+
+Exemplos de motivos para salvar historico:
+
+- `STATUS_CHANGED`
+- `STATUS_CODE_CATEGORY_CHANGED`
+- `ERROR_CHANGED`
+- `PERIODIC_SAMPLE`
+
 ## Metodos implementados no modulo `MonitoredApi`
 
 Controller:
@@ -265,6 +307,232 @@ Repository:
 - `MonitoredApiRepository extends JpaRepository<MonitoredApi, Long>`.
 - Ja herda metodos como `save`, `findAll`, `findById` e `delete`.
 - `ApiCheckHistoryRepository` busca historico por API monitorada.
+
+## Mapa dos arquivos do projeto
+
+Arquivo:
+
+`MonitorApplication.java`
+
+Funcao:
+
+iniciar a aplicacao Spring Boot e ativar o agendamento automatico.
+
+Arquivo:
+
+`shared/GlobalExceptionHandler.java`
+
+Funcao:
+
+centralizar o tratamento de erros da API.
+
+Arquivo:
+
+`shared/config/RestTemplateConfig.java`
+
+Funcao:
+
+configurar o `RestTemplate` usado para chamar APIs externas.
+
+Arquivo:
+
+`modules/monitoredapi/CheckStatus.java`
+
+Funcao:
+
+representar os status possiveis de uma verificacao: `UP`, `SLOW` e `DOWN`.
+
+Arquivo:
+
+`modules/monitoredapi/entity/MonitoredApi.java`
+
+Funcao:
+
+representar a API monitorada salva no banco de dados.
+
+Arquivo:
+
+`modules/monitoredapi/entity/ApiCheckHistory.java`
+
+Funcao:
+
+representar um registro de historico de verificacao salvo no banco.
+
+Arquivo:
+
+`modules/monitoredapi/controllers/MonitoredApiController.java`
+
+Funcao:
+
+expor os endpoints HTTP para cadastrar, listar, atualizar, remover e verificar APIs.
+
+Arquivo:
+
+`modules/monitoredapi/service/MonitoredApiService.java`
+
+Funcao:
+
+concentrar as regras de negocio do cadastro de APIs monitoradas.
+
+Arquivo:
+
+`modules/monitoredapi/service/ApiCheckService.java`
+
+Funcao:
+
+executar a verificacao de uma API, classificar o resultado e salvar o historico.
+
+Arquivo:
+
+`modules/monitoredapi/service/AutomatedApiCheckService.java`
+
+Funcao:
+
+buscar APIs ativas e executar a verificacao automatica de cada uma.
+
+Arquivo:
+
+`modules/monitoredapi/scheduler/ApiCheckScheduler.java`
+
+Funcao:
+
+agendar a execucao periodica da verificacao automatica.
+
+Arquivo:
+
+`modules/monitoredapi/repository/MonitoredApiRepository.java`
+
+Funcao:
+
+buscar, salvar, atualizar, remover APIs monitoradas e buscar APIs ativas.
+
+Arquivo:
+
+`modules/monitoredapi/repository/ApiCheckHistoryRepository.java`
+
+Funcao:
+
+buscar historico e status atual das verificacoes.
+
+Arquivo:
+
+`modules/monitoredapi/dto/CreateMonitoredApiRequest.java`
+
+Funcao:
+
+representar os dados enviados para criar ou atualizar uma API monitorada.
+
+Arquivo:
+
+`modules/monitoredapi/dto/UpdateMonitoredApiActiveRequest.java`
+
+Funcao:
+
+representar o dado enviado para ativar ou desativar uma API monitorada.
+
+Arquivo:
+
+`modules/monitoredapi/dto/ApiCheckResponse.java`
+
+Funcao:
+
+representar a resposta de uma verificacao executada.
+
+Arquivo:
+
+`modules/monitoredapi/dto/ApiCheckHistoryResponse.java`
+
+Funcao:
+
+representar a resposta do historico ou status atual de uma API monitorada.
+
+Arquivo:
+
+`modules/monitoredapi/exception/MonitoredApiNotFoundException.java`
+
+Funcao:
+
+indicar que uma API monitorada nao foi encontrada.
+
+Arquivo:
+
+`modules/monitoredapi/exception/ApiCheckHistoryNotFoundException.java`
+
+Funcao:
+
+indicar que uma API monitorada ainda nao possui historico de verificacao.
+
+Arquivo:
+
+`modules/monitoredapi/exception/MonitoredApiInactiveException.java`
+
+Funcao:
+
+indicar que uma API inativa nao pode ser verificada manualmente.
+
+Arquivo:
+
+`src/main/resources/application.properties`
+
+Funcao:
+
+guardar configuracoes da aplicacao, banco, porta e scheduler.
+
+Arquivo:
+
+`src/main/resources/static/swagger-ui/index.html`
+
+Funcao:
+
+abrir a interface Swagger UI estatica.
+
+Arquivo:
+
+`MonitorApplicationTests.java`
+
+Funcao:
+
+testar se o contexto da aplicacao Spring carrega corretamente.
+
+Arquivo:
+
+`modules/monitoredapi/controllers/MonitoredApiControllerTest.java`
+
+Funcao:
+
+testar os endpoints do controller sem subir a aplicacao inteira.
+
+Arquivo:
+
+`modules/monitoredapi/service/MonitoredApiServiceTest.java`
+
+Funcao:
+
+testar as regras de negocio do cadastro de APIs monitoradas.
+
+Arquivo:
+
+`modules/monitoredapi/service/ApiCheckServiceTest.java`
+
+Funcao:
+
+testar as regras de verificacao, status e historico das APIs.
+
+Arquivo:
+
+`modules/monitoredapi/repository/ApiCheckHistoryRepositoryTest.java`
+
+Funcao:
+
+testar as consultas de historico usando banco de teste.
+
+Arquivo:
+
+`src/test/resources/application-test.properties`
+
+Funcao:
+
+guardar configuracoes usadas somente nos testes automatizados.
 
 ## Erros de validacao
 

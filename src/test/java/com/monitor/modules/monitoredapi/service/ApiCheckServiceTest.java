@@ -13,7 +13,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestTemplate;
 
@@ -38,15 +37,18 @@ class ApiCheckServiceTest {
 
     private ApiCheckHistoryRepository apiCheckHistoryRepository;
     private MonitoredApiService monitoredApiService;
+    private RestTemplate restTemplate;
     private ApiCheckService apiCheckService;
 
     @BeforeEach
     void setUp() {
         apiCheckHistoryRepository = mock(ApiCheckHistoryRepository.class);
         monitoredApiService = mock(MonitoredApiService.class);
+        restTemplate = new RestTemplate();
         apiCheckService = new ApiCheckService(
                 apiCheckHistoryRepository,
-                monitoredApiService
+                monitoredApiService,
+                restTemplate
         );
     }
 
@@ -56,7 +58,6 @@ class ApiCheckServiceTest {
         MonitoredApi api = createApi(id);
         when(monitoredApiService.getById(id)).thenReturn(api);
 
-        RestTemplate restTemplate = (RestTemplate) ReflectionTestUtils.getField(apiCheckService, "restTemplate");
         MockRestServiceServer server = MockRestServiceServer.bindTo(restTemplate).build();
         server.expect(requestTo(api.getUrl()))
                 .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
@@ -90,7 +91,6 @@ class ApiCheckServiceTest {
         MonitoredApi api = createApi(id);
         when(monitoredApiService.getById(id)).thenReturn(api);
 
-        RestTemplate restTemplate = (RestTemplate) ReflectionTestUtils.getField(apiCheckService, "restTemplate");
         MockRestServiceServer server = MockRestServiceServer.bindTo(restTemplate).build();
         server.expect(requestTo(api.getUrl()))
                 .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR));
