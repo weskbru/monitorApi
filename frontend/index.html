@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Monitor API</title>
+    <link rel="stylesheet" href="/src/shared/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">M</div>
+          <div>
+            <strong>Monitor API</strong>
+            <span>Operations</span>
+          </div>
+        </div>
+
+        <nav class="nav-list" aria-label="Navegacao principal">
+          <a class="nav-item active" href="#">Dashboard</a>
+          <a class="nav-item" href="#">APIs</a>
+          <a class="nav-item" href="#">Historico</a>
+          <a class="nav-item" href="#">Incidentes</a>
+          <a class="nav-item" href="#">Configuracoes</a>
+        </nav>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Ambiente local</p>
+            <h1>Dashboard operacional</h1>
+          </div>
+          <button class="primary-button" type="button">Nova API</button>
+        </header>
+
+        <section class="metrics-grid" aria-label="Resumo operacional">
+          <article class="metric-card">
+            <span>Total</span>
+            <strong id="metric-total">0</strong>
+          </article>
+          <article class="metric-card">
+            <span>UP</span>
+            <strong class="status-up" id="metric-up">0</strong>
+          </article>
+          <article class="metric-card">
+            <span>SLOW</span>
+            <strong class="status-slow" id="metric-slow">0</strong>
+          </article>
+          <article class="metric-card">
+            <span>DOWN</span>
+            <strong class="status-down" id="metric-down">0</strong>
+          </article>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>APIs monitoradas</h2>
+              <p id="panel-subtitle">Carregando dados do backend...</p>
+            </div>
+            <button class="ghost-button" id="refresh-button" type="button">Atualizar</button>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>URL</th>
+                  <th>Status</th>
+                  <th>Codigo</th>
+                  <th>Resposta</th>
+                  <th>Ultima checagem</th>
+                  <th>Ativa</th>
+                </tr>
+              </thead>
+              <tbody id="api-table-body">
+                <tr>
+                  <td colspan="7" class="empty-cell">Conectando ao backend...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/src/app/main.js"></script>
+  </body>
+</html>

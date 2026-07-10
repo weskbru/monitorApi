@@ -17,7 +17,7 @@ services:
       retries: 10
 
   api:
-    build: .
+    build: ./backend
     container_name: monitorapi-api
     depends_on:
       postgres:
@@ -30,6 +30,14 @@ services:
       SPRING_JPA_SHOW_SQL: "true"
     ports:
       - "8090:8080"
+
+  frontend:
+    build: ./frontend
+    container_name: monitorapi-frontend
+    depends_on:
+      - api
+    ports:
+      - "3000:80"
 
 volumes:
   monitor-api-postgres-data:

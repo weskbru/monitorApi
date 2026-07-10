@@ -33,6 +33,7 @@ A visao completa do produto esta em `docs/PROJECT_VISION.md`.
 - DTO `CreateMonitoredApiRequest` para entrada de dados.
 - Validacoes com Bean Validation.
 - Cadastro, listagem, busca por id, atualizacao e remocao de APIs monitoradas.
+- Ativacao e desativacao de APIs monitoradas.
 - Verificacao manual de disponibilidade de uma API cadastrada.
 - Classificacao da verificacao como `UP`, `SLOW` ou `DOWN`.
 - Mensagem amigavel para explicar o resultado da verificacao.
@@ -92,8 +93,7 @@ GET /api/monitored-apis
 GET /api/monitored-apis/{id}
 ```
 
-Observacao: o tratamento de erro para id inexistente ainda precisa ser melhorado
-para retornar `404 Not Found`.
+Se o `id` nao existir, a API retorna `404 Not Found`.
 
 ### Atualizar API monitorada
 
@@ -118,7 +118,7 @@ Regras atuais:
 - `url` nao pode ser vazia.
 - `url` precisa comecar com `http://` ou `https://`.
 - `description` e opcional.
-- Se o `id` nao existir, hoje a API ainda retorna erro generico.
+- Se o `id` nao existir, a API retorna `404 Not Found`.
 
 ### Remover API monitorada
 
@@ -130,7 +130,29 @@ Regras atuais:
 
 - `id` e recebido pela URL.
 - Se encontrar a API, ela e removida do banco.
-- Se o `id` nao existir, hoje a API ainda retorna erro generico.
+- Se o `id` nao existir, a API retorna `404 Not Found`.
+
+### Ativar ou desativar API monitorada
+
+```http
+PATCH /api/monitored-apis/{id}/active
+```
+
+Exemplo de corpo valido:
+
+```json
+{
+  "active": false
+}
+```
+
+Regras atuais:
+
+- `id` e recebido pela URL.
+- `active` e obrigatorio.
+- Quando `active` for `false`, a API monitorada nao participa da verificacao automatica.
+- Uma API inativa nao pode ser verificada manualmente.
+- Se o `id` nao existir, a API retorna `404 Not Found`.
 
 ### Verificar disponibilidade manualmente
 
@@ -287,6 +309,7 @@ Controller:
 - `GET /api/monitored-apis/{id}`: chama `getMonitoredApiById`.
 - `PUT /api/monitored-apis/{id}`: chama `updateMonitoredApi`.
 - `DELETE /api/monitored-apis/{id}`: chama `deleteMonitoredApi`.
+- `PATCH /api/monitored-apis/{id}/active`: chama `updateActive`.
 - `POST /api/monitored-apis/{id}/check`: chama `checkMonitoredApi`.
 - `GET /api/monitored-apis/{id}/status`: chama `getCurrentStatus`.
 - `GET /api/monitored-apis/{id}/history`: chama `getHistory`.
@@ -298,6 +321,7 @@ Service:
 - `getById(id)`: busca uma API monitorada pelo id.
 - `update(id, name, url, description)`: atualiza nome, URL e descricao.
 - `delete(id)`: remove uma API monitorada.
+- `updateActive(id, active)`: ativa ou desativa uma API monitorada.
 - `check(id)`: executa a verificacao manual da URL cadastrada.
 - `getCurrentStatus(id)`: consulta a ultima verificacao salva.
 - `getHistory(id)`: consulta o historico de verificacoes.
@@ -306,6 +330,7 @@ Repository:
 
 - `MonitoredApiRepository extends JpaRepository<MonitoredApi, Long>`.
 - Ja herda metodos como `save`, `findAll`, `findById` e `delete`.
+- `ApiCurrentStatusRepository` busca o status atual por API monitorada.
 - `ApiCheckHistoryRepository` busca historico por API monitorada.
 
 ## Mapa dos arquivos do projeto
@@ -472,7 +497,7 @@ indicar que uma API inativa nao pode ser verificada manualmente.
 
 Arquivo:
 
-`src/main/resources/application.properties`
+`backend/src/main/resources/application.properties`
 
 Funcao:
 
@@ -480,7 +505,7 @@ guardar configuracoes da aplicacao, banco, porta e scheduler.
 
 Arquivo:
 
-`src/main/resources/static/swagger-ui/index.html`
+`backend/src/main/resources/static/swagger-ui/index.html`
 
 Funcao:
 
@@ -528,7 +553,7 @@ testar as consultas de historico usando banco de teste.
 
 Arquivo:
 
-`src/test/resources/application-test.properties`
+`backend/src/test/resources/application-test.properties`
 
 Funcao:
 
@@ -575,7 +600,7 @@ Exemplo de resposta:
 - `@RestControllerAdvice`: centraliza tratamento de erros dos controllers.
 - Enum: representa um conjunto fechado de estados, como `UP`, `SLOW` e `DOWN`.
 - Query methods: metodos do Spring Data JPA gerados a partir do nome.
-- Docker Compose: sobe API e banco juntos para desenvolvimento.
+- Docker Compose: sobe frontend, API e banco juntos para desenvolvimento.
 
 ## Como rodar
 
@@ -587,6 +612,12 @@ API:
 
 ```text
 http://localhost:8090
+```
+
+Frontend:
+
+```text
+http://localhost:3000
 ```
 
 Swagger UI:
@@ -608,6 +639,7 @@ http://localhost:8090/v3/api-docs
 - Busca por id.
 - Atualizacao de API cadastrada.
 - Remocao de API cadastrada.
+- Ativacao e desativacao de API monitorada.
 - Verificacao manual com API real usando `POST /api/monitored-apis/{id}/check`.
 - Classificacao `UP` com endpoint rapido.
 - Classificacao `SLOW` com endpoint de delay.
@@ -621,6 +653,7 @@ http://localhost:8090/v3/api-docs
 
 ## Proximos passos
 
-- Melhorar erro de busca por id inexistente para retornar `404 Not Found`.
-- Criar testes automatizados.
-- Implementar verificacao automatica periodica.
+- Permitir configurar status HTTP esperado por API monitorada.
+- Permitir configurar timeout da verificacao.
+- Permitir configurar limite de lentidao pelo endpoint de cadastro/atualizacao.
+- Consolidar a documentacao conforme novas regras forem implementadas.
