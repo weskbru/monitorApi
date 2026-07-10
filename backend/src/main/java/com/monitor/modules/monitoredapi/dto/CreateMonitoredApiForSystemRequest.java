@@ -1,10 +1,9 @@
 package com.monitor.modules.monitoredapi.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
-public class CreateMonitoredApiRequest {
+public class CreateMonitoredApiForSystemRequest {
 
     @NotBlank
     private String name;
@@ -13,13 +12,7 @@ public class CreateMonitoredApiRequest {
     @Pattern(regexp = "^(http|https)://.*$", message = "URL deve começar com http:// ou https://")
     private String url;
 
-    @NotNull(message = "systemId e obrigatorio")
-    private Long systemId;
-
     private String description;
-
-
-    // Getters and Setters
 
     public String getName() {
         return name;
@@ -44,13 +37,4 @@ public class CreateMonitoredApiRequest {
     public void setDescription(String description) {
         this.description = description;
     }
-
-    public Long getSystemId() {
-        return systemId;
-    }
-
-    public void setSystemId(Long systemId) {
-        this.systemId = systemId;
-    }
-
 }

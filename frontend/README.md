@@ -15,9 +15,25 @@ dentro do mesmo repositorio do produto.
 
 ## Estado atual
 
-Nesta fase inicial, o frontend esta sendo servido como uma tela estatica por
-nginx. Isso permite subir frontend e backend juntos com Docker enquanto a base
-React/Vite ainda nao foi criada.
+O frontend esta sendo servido como uma tela estatica por nginx. Isso permite
+subir frontend e backend juntos com Docker enquanto a base React/Vite ainda nao
+foi criada.
+
+A primeira tela ja funciona como dashboard operacional:
+
+- lista sistemas monitorados vindos do backend;
+- consulta o status agregado de cada sistema;
+- mostra contadores de sistemas `UP`, `SLOW`, `DOWN` e `UNKNOWN`;
+- permite selecionar um sistema;
+- mostra os endpoints criticos do sistema selecionado;
+- destaca prioridades operacionais por sistema.
+
+A tela de cadastro tambem ja esta disponivel:
+
+- cria sistemas monitorados;
+- lista sistemas cadastrados;
+- permite escolher um sistema existente;
+- cadastra endpoints criticos vinculados ao sistema escolhido.
 
 Comando na raiz do projeto:
 
@@ -39,8 +55,6 @@ Compose.
 src/
   app/
   pages/
-  features/
-  entities/
   shared/
 ```
 
@@ -52,28 +66,25 @@ Responsabilidades:
 
 - inicializacao;
 - rotas;
-- providers;
-- layout principal;
 - configuracao global.
 
 ### `pages`
 
 Telas completas da aplicacao.
 
-Exemplos planejados:
+Implementado agora:
 
-- dashboard;
-- lista de APIs monitoradas;
-- detalhe de uma API monitorada;
-- historico;
-- configuracoes.
+- `pages/dashboard`: dashboard operacional;
+- `pages/register`: cadastro de sistemas e endpoints.
 
 ### `features`
 
-Fluxos de negocio do frontend.
+Camada planejada para quando a tela crescer e os fluxos precisarem sair das
+pages.
 
 Exemplos planejados:
 
+- cadastrar sistema monitorado;
 - cadastrar API monitorada;
 - editar API monitorada;
 - ativar ou desativar API;
@@ -86,6 +97,7 @@ Representacoes do dominio no frontend.
 
 Exemplos planejados:
 
+- `monitored-system`;
 - `monitored-api`;
 - `api-check`;
 - `api-current-status`;
@@ -95,12 +107,10 @@ Exemplos planejados:
 
 Codigo reutilizavel e sem dependencia direta de uma regra especifica.
 
-Exemplos planejados:
+Implementado agora:
 
-- componentes base de UI;
-- cliente HTTP;
-- helpers;
-- formatadores;
+- `shared/api/http.js`: cliente HTTP simples;
+- `shared/ui/formatters.js`: helpers de data, escape HTML e badges de status;
 - constantes;
 - estilos globais.
 

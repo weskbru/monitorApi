@@ -23,7 +23,7 @@ sistemas monitorados e registra o resultado dessas verificacoes.
 
 O valor entregue pela V1 e dar visibilidade operacional basica:
 
-- quais APIs ou sistemas estao sendo monitorados;
+- quais sistemas e endpoints estao sendo monitorados;
 - se o ultimo resultado foi `UP`, `SLOW` ou `DOWN`;
 - qual foi o codigo HTTP retornado;
 - quanto tempo a API demorou para responder;
@@ -53,6 +53,10 @@ Os cenarios mais importantes para este projeto sao:
 
 Por isso, o Monitor API deve acompanhar endpoints que representem partes
 importantes do sistema, e nao apenas testar se a pagina inicial abre.
+
+A evolucao natural do produto e organizar esses endpoints por sistema. Assim, o
+usuario acompanha primeiro o estado de um sistema completo e depois detalha
+quais endpoints criticos estao saudaveis, lentos ou indisponiveis.
 
 Exemplo:
 

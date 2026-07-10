@@ -35,7 +35,11 @@ public class MonitoredApiController {
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "API monitorada cadastrada")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Dados invalidos")
     public MonitoredApi createMonitoredApi(@Valid @RequestBody CreateMonitoredApiRequest request) {
-        return monitoredApiService.create(request.getName(), request.getUrl(), request.getDescription()); 
+        return monitoredApiService.create(
+                request.getSystemId(),
+                request.getName(),
+                request.getUrl(),
+                request.getDescription());
                 
     }
 
@@ -68,7 +72,12 @@ public class MonitoredApiController {
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Dados invalidos")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "API monitorada nao encontrada")
     public MonitoredApi updateMonitoredApi(@PathVariable("id") Long id, @Valid @RequestBody CreateMonitoredApiRequest request) {
-        return monitoredApiService.update(id, request.getName(), request.getUrl(), request.getDescription());
+        return monitoredApiService.update(
+                id,
+                request.getSystemId(),
+                request.getName(),
+                request.getUrl(),
+                request.getDescription());
     }   
 
     @PostMapping("/{id}/check")

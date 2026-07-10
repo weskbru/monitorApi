@@ -1,10 +1,13 @@
 package com.monitor.modules.monitoredapi.entity;
 
+import com.monitor.modules.monitoredsystem.entity.MonitoredSystem;
+import jakarta.persistence.ManyToOne;
 import java.time.LocalDateTime;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 
 @Entity
 public class MonitoredApi {
@@ -19,6 +22,10 @@ public class MonitoredApi {
     private Boolean active;
     private LocalDateTime createdAt;
     private Long slowThresholdMs = 3000L; // Novo campo para armazenar o limite de lentidão em milissegundos
+
+    @ManyToOne
+    @JoinColumn(name = "monitored_system_id")
+    private MonitoredSystem monitoredSystem;
 
     // Constructors
     public MonitoredApi(String name, String url) {
@@ -90,5 +97,12 @@ public class MonitoredApi {
         this.slowThresholdMs = slowThresholdMs;
     }
 
+    public MonitoredSystem getMonitoredSystem() {
+        return monitoredSystem;
+    }
+
+    public void setMonitoredSystem(MonitoredSystem monitoredSystem) {
+        this.monitoredSystem = monitoredSystem;
+    }
 
 }

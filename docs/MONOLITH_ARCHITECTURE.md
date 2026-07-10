@@ -35,7 +35,8 @@ Responsabilidades:
 - persistir dados;
 - executar verificacoes HTTP;
 - classificar resultados como `UP`, `SLOW` ou `DOWN`;
-- salvar historico e status atual.
+- salvar historico e status atual;
+- agrupar endpoints criticos por sistema monitorado.
 
 Camadas atuais:
 
@@ -88,3 +89,11 @@ Servicos atuais:
 
 O frontend faz proxy de `/api` para o container `api`, evitando problema de CORS
 durante o desenvolvimento local.
+
+## Evolucao de Produto
+
+A proxima evolucao do dominio esta documentada em
+`docs/SYSTEM_MONITORING_MODEL.md`.
+
+O objetivo e tratar o sistema monitorado como agrupador principal, com varios
+endpoints criticos vinculados a ele.

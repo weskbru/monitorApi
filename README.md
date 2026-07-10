@@ -34,16 +34,141 @@ A visao completa do produto esta em `docs/PROJECT_VISION.md`.
 - Validacoes com Bean Validation.
 - Cadastro, listagem, busca por id, atualizacao e remocao de APIs monitoradas.
 - Ativacao e desativacao de APIs monitoradas.
+- Vinculo de APIs monitoradas a sistemas monitorados.
+- Cadastro e listagem de APIs dentro de um sistema monitorado.
+- Consulta do status agregado de um sistema monitorado.
+- Dashboard frontend baseado em sistemas monitorados e endpoints por sistema.
 - Verificacao manual de disponibilidade de uma API cadastrada.
 - Classificacao da verificacao como `UP`, `SLOW` ou `DOWN`.
 - Mensagem amigavel para explicar o resultado da verificacao.
 - Historico de verificacoes por API monitorada.
 - Consulta do status atual, baseada na ultima verificacao salva.
+- Cadastro, listagem, busca, atualizacao, ativacao/desativacao e remocao de sistemas monitorados.
 - Tratamento global de erros de validacao.
 - Documentacao OpenAPI em `/v3/api-docs`.
 - Swagger UI estatico em `/swagger-ui/index.html`.
 
 ## Endpoints atuais
+
+### Cadastrar sistema monitorado
+
+```http
+POST /api/monitored-systems
+```
+
+Exemplo de corpo valido:
+
+```json
+{
+  "name": "Sistema Financeiro",
+  "baseUrl": "https://financeiro.empresa.com",
+  "description": "Sistema responsavel por pagamentos e conciliacao"
+}
+```
+
+Regras atuais:
+
+- `name` nao pode ser vazio.
+- `baseUrl` nao pode ser vazia.
+- `baseUrl` precisa comecar com `http://` ou `https://`.
+- `description` e opcional.
+
+Campos retornados pela API:
+
+```json
+{
+  "id": 1,
+  "name": "Sistema Financeiro",
+  "baseUrl": "https://financeiro.empresa.com",
+  "description": "Sistema responsavel por pagamentos e conciliacao",
+  "active": true,
+  "createdAt": "2026-07-09T22:10:00"
+}
+```
+
+### Listar sistemas monitorados
+
+```http
+GET /api/monitored-systems
+```
+
+### Buscar sistema monitorado por id
+
+```http
+GET /api/monitored-systems/{id}
+```
+
+Se o `id` nao existir, a API retorna `404 Not Found`.
+
+### Atualizar sistema monitorado
+
+```http
+PUT /api/monitored-systems/{id}
+```
+
+Exemplo de corpo valido:
+
+```json
+{
+  "name": "Sistema Financeiro",
+  "baseUrl": "https://financeiro.empresa.com",
+  "description": "Sistema financeiro principal"
+}
+```
+
+### Ativar ou desativar sistema monitorado
+
+```http
+PATCH /api/monitored-systems/{id}/active
+```
+
+Exemplo de corpo valido:
+
+```json
+{
+  "active": false
+}
+```
+
+### Remover sistema monitorado
+
+```http
+DELETE /api/monitored-systems/{id}
+```
+
+### Consultar status agregado de um sistema
+
+```http
+GET /api/monitored-systems/{id}/status
+```
+
+Esse endpoint calcula a saude do sistema usando apenas as APIs ativas
+vinculadas a ele.
+
+Regras atuais:
+
+- se algum endpoint ativo estiver `DOWN`, o sistema fica `DOWN`;
+- se nao houver `DOWN`, mas existir endpoint `SLOW`, o sistema fica `SLOW`;
+- se faltar leitura em algum endpoint ativo, sem falha conhecida, o sistema fica `UNKNOWN`;
+- se todos os endpoints ativos estiverem `UP`, o sistema fica `UP`;
+- se nao houver endpoint ativo, o sistema fica `UNKNOWN`.
+
+Exemplo de resposta:
+
+```json
+{
+  "systemId": 1,
+  "name": "Sistema Financeiro",
+  "status": "DOWN",
+  "message": "Existe endpoint critico indisponivel.",
+  "totalEndpoints": 4,
+  "upEndpoints": 2,
+  "slowEndpoints": 1,
+  "downEndpoints": 1,
+  "unknownEndpoints": 0,
+  "lastCheckedAt": "2026-07-09T22:20:00"
+}
+```
 
 ### Cadastrar API monitorada
 
@@ -57,6 +182,7 @@ Exemplo de corpo valido:
 {
   "name": "ViaCEP",
   "url": "https://viacep.com.br/ws/01001000/json/",
+  "systemId": 1,
   "description": "API publica para consulta de CEP"
 }
 ```
@@ -66,6 +192,7 @@ Regras atuais:
 - `name` nao pode ser vazio.
 - `url` nao pode ser vazia.
 - `url` precisa comecar com `http://` ou `https://`.
+- `systemId` e obrigatorio e precisa apontar para um sistema monitorado existente.
 - `description` e opcional.
 
 Campos retornados pela API:
@@ -77,8 +204,62 @@ Campos retornados pela API:
   "url": "https://viacep.com.br/ws/01001000/json/",
   "description": "API publica para consulta de CEP",
   "active": true,
+  "monitoredSystem": {
+    "id": 1,
+    "name": "Sistema Financeiro",
+    "baseUrl": "https://financeiro.empresa.com",
+    "description": "Sistema responsavel por pagamentos e conciliacao",
+    "active": true,
+    "createdAt": "2026-07-09T22:10:00"
+  },
   "createdAt": "2026-06-23T20:30:00"
 }
+```
+
+### Cadastrar API monitorada dentro de um sistema
+
+```http
+POST /api/monitored-systems/{systemId}/apis
+```
+
+Exemplo de corpo valido:
+
+```json
+{
+  "name": "Login",
+  "url": "https://financeiro.empresa.com/api/auth/status",
+  "description": "Endpoint critico de login"
+}
+```
+
+### Listar APIs de um sistema
+
+```http
+GET /api/monitored-systems/{systemId}/apis
+```
+
+### Buscar API de um sistema por id
+
+```http
+GET /api/monitored-systems/{systemId}/apis/{apiId}
+```
+
+### Atualizar API de um sistema
+
+```http
+PUT /api/monitored-systems/{systemId}/apis/{apiId}
+```
+
+### Ativar ou desativar API de um sistema
+
+```http
+PATCH /api/monitored-systems/{systemId}/apis/{apiId}/active
+```
+
+### Remover API de um sistema
+
+```http
+DELETE /api/monitored-systems/{systemId}/apis/{apiId}
 ```
 
 ### Listar APIs cadastradas
@@ -107,6 +288,7 @@ Exemplo de corpo valido:
 {
   "name": "ViaCEP",
   "url": "https://viacep.com.br/ws/01001000/json/",
+  "systemId": 1,
   "description": "Consulta de endereco por CEP"
 }
 ```
@@ -117,6 +299,7 @@ Regras atuais:
 - `name` nao pode ser vazio.
 - `url` nao pode ser vazia.
 - `url` precisa comecar com `http://` ou `https://`.
+- `systemId` e obrigatorio.
 - `description` e opcional.
 - Se o `id` nao existir, a API retorna `404 Not Found`.
 

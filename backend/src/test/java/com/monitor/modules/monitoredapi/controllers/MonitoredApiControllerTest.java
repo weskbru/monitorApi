@@ -11,6 +11,7 @@ import com.monitor.modules.monitoredapi.exception.MonitoredApiInactiveException;
 import com.monitor.modules.monitoredapi.exception.MonitoredApiNotFoundException;
 import com.monitor.modules.monitoredapi.service.ApiCheckService;
 import com.monitor.modules.monitoredapi.service.MonitoredApiService;
+import com.monitor.modules.monitoredsystem.entity.MonitoredSystem;
 import com.monitor.shared.GlobalExceptionHandler;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,6 +57,7 @@ class MonitoredApiControllerTest {
     void shouldCreateMonitoredApi() throws Exception {
         MonitoredApi api = createApi(1L);
         when(monitoredApiService.create(
+                eq(1L),
                 eq("ViaCEP"),
                 eq("https://viacep.com.br/ws/01001000/json/"),
                 eq("API publica de CEP")
@@ -64,7 +66,8 @@ class MonitoredApiControllerTest {
         Map<String, String> request = Map.of(
                 "name", "ViaCEP",
                 "url", "https://viacep.com.br/ws/01001000/json/",
-                "description", "API publica de CEP"
+                "description", "API publica de CEP",
+                "systemId", "1"
         );
 
         mockMvc.perform(post("/api/monitored-apis")
@@ -81,7 +84,8 @@ class MonitoredApiControllerTest {
     void shouldReturnBadRequestWhenCreateRequestIsInvalid() throws Exception {
         Map<String, String> request = Map.of(
                 "name", "",
-                "url", "viacep.com.br"
+                "url", "viacep.com.br",
+                "systemId", "1"
         );
 
         mockMvc.perform(post("/api/monitored-apis")
@@ -131,6 +135,7 @@ class MonitoredApiControllerTest {
 
         when(monitoredApiService.update(
                 eq(1L),
+                eq(1L),
                 eq("ViaCEP Atualizada"),
                 eq("https://viacep.com.br/ws/01001000/json/"),
                 eq("Descricao atualizada")
@@ -139,7 +144,8 @@ class MonitoredApiControllerTest {
         Map<String, String> request = Map.of(
                 "name", "ViaCEP Atualizada",
                 "url", "https://viacep.com.br/ws/01001000/json/",
-                "description", "Descricao atualizada"
+                "description", "Descricao atualizada",
+                "systemId", "1"
         );
 
         mockMvc.perform(put("/api/monitored-apis/1")
@@ -282,7 +288,14 @@ class MonitoredApiControllerTest {
         MonitoredApi api = new MonitoredApi("ViaCEP", "https://viacep.com.br/ws/01001000/json/");
         api.setId(id);
         api.setDescription("API publica de CEP");
+        api.setMonitoredSystem(createSystem(1L));
         return api;
+    }
+
+    private MonitoredSystem createSystem(Long id) {
+        MonitoredSystem system = new MonitoredSystem("Sistema Financeiro", "https://financeiro.empresa.com");
+        system.setId(id);
+        return system;
     }
 
     private ApiCheckHistoryResponse createHistoryResponse(CheckStatus status) {

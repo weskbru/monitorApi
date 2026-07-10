@@ -2,6 +2,7 @@ package com.monitor.shared;
 
 import com.monitor.modules.monitoredapi.exception.MonitoredApiNotFoundException;
 import com.monitor.modules.monitoredapi.exception.ApiCheckHistoryNotFoundException;
+import com.monitor.modules.monitoredsystem.exception.MonitoredSystemNotFoundException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -18,6 +19,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MonitoredApiNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleMonitoredApiNotFound(MonitoredApiNotFoundException exception) {
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("message", exception.getMessage());
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    @ExceptionHandler(MonitoredSystemNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleMonitoredSystemNotFound(MonitoredSystemNotFoundException exception) {
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("message", exception.getMessage());
 
