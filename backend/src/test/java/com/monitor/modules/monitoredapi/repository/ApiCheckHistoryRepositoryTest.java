@@ -3,6 +3,7 @@ package com.monitor.modules.monitoredapi.repository;
 import com.monitor.modules.monitoredapi.CheckStatus;
 import com.monitor.modules.monitoredapi.entity.ApiCheckHistory;
 import com.monitor.modules.monitoredapi.entity.MonitoredApi;
+import com.monitor.modules.monitoredsystem.entity.MonitoredSystem;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -63,7 +64,10 @@ class ApiCheckHistoryRepositoryTest {
     }
 
     private MonitoredApi persistApi(String name) {
+        MonitoredSystem system = new MonitoredSystem("Sistema de teste", "https://example.com");
+        entityManager.persist(system);
         MonitoredApi api = new MonitoredApi(name, "https://viacep.com.br/ws/01001000/json/");
+        api.setMonitoredSystem(system);
         entityManager.persist(api);
         return api;
     }

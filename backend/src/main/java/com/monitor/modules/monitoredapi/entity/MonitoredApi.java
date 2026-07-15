@@ -8,8 +8,14 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
 
 @Entity
+@Table(indexes = {
+        @Index(name = "idx_monitored_api_system", columnList = "monitored_system_id"),
+        @Index(name = "idx_monitored_api_active", columnList = "active")
+})
 public class MonitoredApi {
 
     @Id
@@ -21,7 +27,9 @@ public class MonitoredApi {
     private String description;
     private Boolean active;
     private LocalDateTime createdAt;
-    private Long slowThresholdMs = 3000L; // Novo campo para armazenar o limite de lentidão em milissegundos
+    private Integer expectedStatusCode = 200;
+    private Long slowThresholdMs = 3000L;
+    private Long timeoutMs = 10000L;
 
     @ManyToOne
     @JoinColumn(name = "monitored_system_id")
@@ -33,7 +41,9 @@ public class MonitoredApi {
         this.url = url;
         this.active = true; 
         this.createdAt = LocalDateTime.now();
-        this.slowThresholdMs = 3000L; 
+        this.expectedStatusCode = 200;
+        this.slowThresholdMs = 3000L;
+        this.timeoutMs = 10000L;
     }
 
     public MonitoredApi() {
@@ -95,6 +105,22 @@ public class MonitoredApi {
 
     public void setSlowThresholdMs(Long slowThresholdMs) {
         this.slowThresholdMs = slowThresholdMs;
+    }
+
+    public Integer getExpectedStatusCode() {
+        return expectedStatusCode;
+    }
+
+    public void setExpectedStatusCode(Integer expectedStatusCode) {
+        this.expectedStatusCode = expectedStatusCode;
+    }
+
+    public Long getTimeoutMs() {
+        return timeoutMs;
+    }
+
+    public void setTimeoutMs(Long timeoutMs) {
+        this.timeoutMs = timeoutMs;
     }
 
     public MonitoredSystem getMonitoredSystem() {

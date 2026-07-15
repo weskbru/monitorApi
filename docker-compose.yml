@@ -26,8 +26,10 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/monitoring_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      SPRING_JPA_SHOW_SQL: "true"
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_JPA_SHOW_SQL: "false"
+      MONITOR_STATUS_STALE_AFTER_MS: 120000
+      MONITOR_ALLOW_PRIVATE_TARGETS: "false"
     ports:
       - "8090:8080"
 

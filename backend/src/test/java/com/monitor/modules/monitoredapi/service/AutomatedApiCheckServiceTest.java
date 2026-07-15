@@ -26,7 +26,7 @@ class AutomatedApiCheckServiceTest {
         MonitoredApi firstApi = createApi(1L);
         MonitoredApi secondApi = createApi(2L);
 
-        when(monitoredApiRepository.findByActiveTrue())
+        when(monitoredApiRepository.findByActiveTrueAndMonitoredSystemActiveTrue())
                 .thenReturn(List.of(firstApi, secondApi));
 
         automatedApiCheckService.checkActiveApis();
@@ -47,7 +47,7 @@ class AutomatedApiCheckServiceTest {
         MonitoredApi firstApi = createApi(1L);
         MonitoredApi secondApi = createApi(2L);
 
-        when(monitoredApiRepository.findByActiveTrue())
+        when(monitoredApiRepository.findByActiveTrueAndMonitoredSystemActiveTrue())
                 .thenReturn(List.of(firstApi, secondApi));
 
         doThrow(new RuntimeException("Falha na verificacao"))
@@ -69,7 +69,7 @@ class AutomatedApiCheckServiceTest {
                 apiCheckService
         );
 
-        when(monitoredApiRepository.findByActiveTrue())
+        when(monitoredApiRepository.findByActiveTrueAndMonitoredSystemActiveTrue())
                 .thenReturn(List.of());
 
         automatedApiCheckService.checkActiveApis();

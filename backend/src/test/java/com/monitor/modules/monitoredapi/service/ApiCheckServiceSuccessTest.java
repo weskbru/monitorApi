@@ -68,12 +68,12 @@ class ApiCheckServiceSuccessTest extends ApiCheckServiceTestSupport {
         when(apiCurrentStatusRepository.findByMonitoredApiId(id)).thenReturn(Optional.of(currentStatus));
 
         MockRestServiceServer server = MockRestServiceServer.bindTo(restTemplate).build();
-        server.expect(requestTo(api.getUrl())).andRespond(withStatus(HttpStatus.NO_CONTENT));
+        server.expect(requestTo(api.getUrl())).andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
 
         ApiCheckResponse response = apiCheckService.check(id);
 
         assertEquals(CheckStatus.UP, response.getStatus());
-        assertEquals(204, response.getStatusCode());
+        assertEquals(200, response.getStatusCode());
         verify(apiCheckHistoryRepository, never()).save(org.mockito.ArgumentMatchers.any(ApiCheckHistory.class));
         verify(apiCurrentStatusRepository).save(org.mockito.ArgumentMatchers.any(ApiCurrentStatus.class));
 

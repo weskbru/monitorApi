@@ -22,6 +22,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/monitored-systems")
@@ -52,6 +54,15 @@ public class MonitoredSystemController {
     @Operation(summary = "Listar sistemas monitorados")
     public List<MonitoredSystem> listAll() {
         return monitoredSystemService.listAll();
+    }
+
+    @GetMapping("/search")
+    @Operation(summary = "Buscar sistemas monitorados com paginacao")
+    public Page<MonitoredSystem> search(
+            @RequestParam(value = "query", defaultValue = "") String query,
+            @RequestParam(value = "page", defaultValue = "0") Integer page,
+            @RequestParam(value = "size", defaultValue = "20") Integer size) {
+        return monitoredSystemService.search(query, page, size);
     }
 
     @GetMapping("/{id}")

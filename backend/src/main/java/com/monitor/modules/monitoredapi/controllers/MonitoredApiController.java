@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
 
 @RestController
 @RequestMapping("/api/monitored-apis")
@@ -39,7 +40,10 @@ public class MonitoredApiController {
                 request.getSystemId(),
                 request.getName(),
                 request.getUrl(),
-                request.getDescription());
+                request.getDescription(),
+                request.getExpectedStatusCode(),
+                request.getSlowThresholdMs(),
+                request.getTimeoutMs());
                 
     }
 
@@ -47,6 +51,15 @@ public class MonitoredApiController {
     @Operation(summary = "Listar APIs monitoradas")
     public List<MonitoredApi> listAll() {
         return monitoredApiService.listAll();
+    }
+
+    @GetMapping("/search")
+    @Operation(summary = "Buscar APIs monitoradas com paginacao")
+    public Page<MonitoredApi> search(
+            @RequestParam(value = "query", defaultValue = "") String query,
+            @RequestParam(value = "page", defaultValue = "0") Integer page,
+            @RequestParam(value = "size", defaultValue = "20") Integer size) {
+        return monitoredApiService.search(query, page, size);
     }
 
     @GetMapping("/{id}")
@@ -77,7 +90,10 @@ public class MonitoredApiController {
                 request.getSystemId(),
                 request.getName(),
                 request.getUrl(),
-                request.getDescription());
+                request.getDescription(),
+                request.getExpectedStatusCode(),
+                request.getSlowThresholdMs(),
+                request.getTimeoutMs());
     }   
 
     @PostMapping("/{id}/check")
@@ -92,8 +108,10 @@ public class MonitoredApiController {
     @Operation(summary = "Consultar historico de verificacoes")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Historico retornado")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "API monitorada nao encontrada")
-    public List<ApiCheckHistoryResponse> getHistory(@PathVariable("id") Long id) {
-        return apiCheckService.getHistory(id);
+    public List<ApiCheckHistoryResponse> getHistory(@PathVariable("id") Long id,
+            @RequestParam(value = "page", required = false) Integer page,
+            @RequestParam(value = "size", defaultValue = "100") Integer size) {
+        return page == null ? apiCheckService.getHistory(id) : apiCheckService.getHistory(id, page, size);
     }
 
     @GetMapping("/{id}/status")

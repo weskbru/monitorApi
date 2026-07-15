@@ -28,7 +28,7 @@ public class AutomatedApiCheckService {
     public void checkActiveApis() {
         log.info("Iniciando verificacao automatica de APIs ativas");
 
-        List<MonitoredApi> activeApis = monitoredApiRepository.findByActiveTrue();
+        List<MonitoredApi> activeApis = monitoredApiRepository.findByActiveTrueAndMonitoredSystemActiveTrue();
 
         for (MonitoredApi api : activeApis) {
             try {

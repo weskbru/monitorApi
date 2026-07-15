@@ -11,4 +11,6 @@ public interface ApiCurrentStatusRepository extends JpaRepository<ApiCurrentStat
     Optional<ApiCurrentStatus> findByMonitoredApiId(Long monitoredApiId);
 
     List<ApiCurrentStatus> findByMonitoredApiMonitoredSystemId(Long monitoredSystemId);
+    void deleteByMonitoredApiId(Long monitoredApiId);
+    void deleteByMonitoredApiMonitoredSystemId(Long monitoredSystemId);
 }

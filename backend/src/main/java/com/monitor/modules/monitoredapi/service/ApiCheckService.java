@@ -14,13 +14,22 @@ import com.monitor.modules.monitoredapi.exception.MonitoredApiInactiveException;
 import com.monitor.modules.monitoredapi.repository.ApiCheckHistoryRepository;
 import com.monitor.modules.monitoredapi.repository.ApiCurrentStatusRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
+import io.micrometer.core.instrument.MeterRegistry;
+import java.util.concurrent.TimeUnit;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 @Service
 public class ApiCheckService {
+
+    private long staleAfterMs = Long.MAX_VALUE;
+    private MeterRegistry meterRegistry;
 
     private final ApiCheckHistoryRepository apiCheckHistoryRepository;
     private final ApiCurrentStatusRepository apiCurrentStatusRepository;
@@ -62,9 +71,20 @@ public class ApiCheckService {
     }
 
     private void validateApiCanBeChecked(MonitoredApi api) {
-        if (!Boolean.TRUE.equals(api.getActive())) {
+        if (!Boolean.TRUE.equals(api.getActive())
+                || api.getMonitoredSystem() != null && !Boolean.TRUE.equals(api.getMonitoredSystem().getActive())) {
             throw new MonitoredApiInactiveException(api.getId());
         }
+    }
+
+    @Value("${monitor.status.stale-after-ms:120000}")
+    void setStaleAfterMs(long staleAfterMs) {
+        this.staleAfterMs = staleAfterMs;
+    }
+
+    @Autowired(required = false)
+    void setMeterRegistry(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
     }
 
 
@@ -83,6 +103,11 @@ public class ApiCheckService {
         );
 
         String message = buildMessage(status);
+        if (meterRegistry != null) {
+            meterRegistry.counter("monitor_api_checks_total", "status", status.name()).increment();
+            meterRegistry.timer("monitor_api_check_duration", "apiId", String.valueOf(api.getId()))
+                    .record(responseTime, TimeUnit.MILLISECONDS);
+        }
         Optional<ApiCurrentStatus> currentStatusFound = apiCurrentStatusRepository
                 .findByMonitoredApiId(api.getId());
 
@@ -187,6 +212,19 @@ public class ApiCheckService {
                 .toList();
     }
 
+    public List<ApiCheckHistoryResponse> getHistory(Long id, int page, int size) {
+        MonitoredApi api = monitoredApiService.getById(id);
+        int safePage = Math.max(0, page);
+        int safeSize = Math.max(1, Math.min(size, 100));
+
+        return apiCheckHistoryRepository.findByMonitoredApiId(
+                        api.getId(),
+                        PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "checkedAt")))
+                .stream()
+                .map(this::toHistoryResponse)
+                .toList();
+    }
+
     public ApiCurrentStatusResponse getCurrentStatus(Long id) {
         MonitoredApi api = monitoredApiService.getById(id);
 
@@ -211,14 +249,17 @@ public class ApiCheckService {
 
     private ApiCurrentStatusResponse toCurrentStatusResponse(ApiCurrentStatus currentStatus) {
         MonitoredApi api = currentStatus.getMonitoredApi();
+        boolean stale = staleAfterMs != Long.MAX_VALUE && (currentStatus.getCheckedAt() == null
+                || currentStatus.getCheckedAt().plusNanos(staleAfterMs * 1_000_000).isBefore(LocalDateTime.now()));
+        CheckStatus effectiveStatus = stale ? CheckStatus.UNKNOWN : currentStatus.getStatus();
         return new ApiCurrentStatusResponse(
                 currentStatus.getId(),
                 api.getId(),
                 api.getName(),
                 api.getUrl(),
-                currentStatus.getStatus(),
-                buildMessage(currentStatus.getStatus()),
-                currentStatus.getAvailable(),
+                effectiveStatus,
+                stale ? "A ultima leitura expirou; execute uma nova verificacao." : buildMessage(effectiveStatus),
+                stale ? false : currentStatus.getAvailable(),
                 currentStatus.getStatusCode(),
                 currentStatus.getResponseTimeMs(),
                 currentStatus.getCheckedAt(),

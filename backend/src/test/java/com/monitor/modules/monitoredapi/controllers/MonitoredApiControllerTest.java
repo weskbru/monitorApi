@@ -60,7 +60,8 @@ class MonitoredApiControllerTest {
                 eq(1L),
                 eq("ViaCEP"),
                 eq("https://viacep.com.br/ws/01001000/json/"),
-                eq("API publica de CEP")
+                eq("API publica de CEP"),
+                eq(200), eq(3000L), eq(10000L)
         )).thenReturn(api);
 
         Map<String, String> request = Map.of(
@@ -138,7 +139,8 @@ class MonitoredApiControllerTest {
                 eq(1L),
                 eq("ViaCEP Atualizada"),
                 eq("https://viacep.com.br/ws/01001000/json/"),
-                eq("Descricao atualizada")
+                eq("Descricao atualizada"),
+                eq(200), eq(3000L), eq(10000L)
         )).thenReturn(updatedApi);
 
         Map<String, String> request = Map.of(

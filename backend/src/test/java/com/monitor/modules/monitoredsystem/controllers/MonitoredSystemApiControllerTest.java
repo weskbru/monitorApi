@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.monitor.modules.monitoredapi.entity.MonitoredApi;
 import com.monitor.modules.monitoredapi.exception.MonitoredApiNotFoundException;
 import com.monitor.modules.monitoredapi.service.MonitoredApiService;
+import com.monitor.modules.monitoredapi.service.ApiCheckService;
 import com.monitor.modules.monitoredsystem.entity.MonitoredSystem;
 import com.monitor.modules.monitoredsystem.exception.MonitoredSystemNotFoundException;
 import com.monitor.shared.GlobalExceptionHandler;
@@ -43,6 +44,9 @@ class MonitoredSystemApiControllerTest {
     @MockitoBean
     private MonitoredApiService monitoredApiService;
 
+    @MockitoBean
+    private ApiCheckService apiCheckService;
+
     @Test
     void shouldCreateMonitoredApiForSystem() throws Exception {
         MonitoredApi api = createApi(10L, 1L);
@@ -51,7 +55,8 @@ class MonitoredSystemApiControllerTest {
                 eq(1L),
                 eq("Login"),
                 eq("https://financeiro.empresa.com/api/auth/status"),
-                eq("Endpoint de login")))
+                eq("Endpoint de login"),
+                eq(200), eq(3000L), eq(10000L)))
                 .thenReturn(api);
 
         Map<String, String> request = Map.of(
@@ -89,7 +94,8 @@ class MonitoredSystemApiControllerTest {
                 eq(999L),
                 eq("Login"),
                 eq("https://financeiro.empresa.com/api/auth/status"),
-                eq("Endpoint de login")))
+                eq("Endpoint de login"),
+                eq(200), eq(3000L), eq(10000L)))
                 .thenThrow(new MonitoredSystemNotFoundException(999L));
 
         Map<String, String> request = Map.of(
@@ -146,7 +152,8 @@ class MonitoredSystemApiControllerTest {
                 eq(10L),
                 eq("Login Atualizado"),
                 eq("https://financeiro.empresa.com/api/auth/status"),
-                eq("Descricao atualizada")))
+                eq("Descricao atualizada"),
+                eq(200), eq(3000L), eq(10000L)))
                 .thenReturn(updatedApi);
 
         Map<String, String> request = Map.of(

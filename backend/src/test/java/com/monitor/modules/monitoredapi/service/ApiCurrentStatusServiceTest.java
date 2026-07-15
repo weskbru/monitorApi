@@ -8,11 +8,13 @@ import com.monitor.modules.monitoredapi.exception.ApiCheckHistoryNotFoundExcepti
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.when;
 
 class ApiCurrentStatusServiceTest extends ApiCheckServiceTestSupport {
@@ -51,5 +53,22 @@ class ApiCurrentStatusServiceTest extends ApiCheckServiceTestSupport {
         when(apiCurrentStatusRepository.findByMonitoredApiId(id)).thenReturn(Optional.empty());
 
         assertThrows(ApiCheckHistoryNotFoundException.class, () -> apiCheckService.getCurrentStatus(id));
+    }
+
+    @Test
+    void shouldReturnUnknownWhenCurrentStatusIsStale() {
+        Long id = 1L;
+        MonitoredApi api = createApi(id);
+        ApiCurrentStatus currentStatus = createCurrentStatus(api, CheckStatus.UP);
+        currentStatus.setCheckedAt(LocalDateTime.now().minusMinutes(3));
+        apiCheckService.setStaleAfterMs(120000L);
+
+        when(monitoredApiService.getById(id)).thenReturn(api);
+        when(apiCurrentStatusRepository.findByMonitoredApiId(id)).thenReturn(Optional.of(currentStatus));
+
+        ApiCurrentStatusResponse response = apiCheckService.getCurrentStatus(id);
+
+        assertEquals(CheckStatus.UNKNOWN, response.getStatus());
+        assertFalse(response.getAvailable());
     }
 }

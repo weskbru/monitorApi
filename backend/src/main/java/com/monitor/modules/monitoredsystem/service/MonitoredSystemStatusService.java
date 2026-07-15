@@ -8,6 +8,7 @@ import com.monitor.modules.monitoredapi.service.MonitoredApiService;
 import com.monitor.modules.monitoredsystem.dto.MonitoredSystemStatusResponse;
 import com.monitor.modules.monitoredsystem.entity.MonitoredSystem;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
@@ -18,6 +19,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class MonitoredSystemStatusService {
+
+    private long staleAfterMs = Long.MAX_VALUE;
 
     private final MonitoredSystemService monitoredSystemService;
     private final MonitoredApiService monitoredApiService;
@@ -54,7 +57,7 @@ public class MonitoredSystemStatusService {
         for (MonitoredApi api : activeApis) {
             ApiCurrentStatus currentStatus = statusesByApiId.get(api.getId());
 
-            if (currentStatus == null || currentStatus.getStatus() == null) {
+            if (currentStatus == null || currentStatus.getStatus() == null || isStale(currentStatus)) {
                 unknownEndpoints++;
                 continue;
             }
@@ -85,6 +88,16 @@ public class MonitoredSystemStatusService {
                 unknownEndpoints,
                 lastCheckedAt
         );
+    }
+
+    @Value("${monitor.status.stale-after-ms:120000}")
+    void setStaleAfterMs(long staleAfterMs) {
+        this.staleAfterMs = staleAfterMs;
+    }
+
+    private boolean isStale(ApiCurrentStatus status) {
+        return staleAfterMs != Long.MAX_VALUE && (status.getCheckedAt() == null
+                || status.getCheckedAt().plusNanos(staleAfterMs * 1_000_000).isBefore(LocalDateTime.now()));
     }
 
     private CheckStatus classifySystemStatus(

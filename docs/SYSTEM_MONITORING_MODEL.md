@@ -323,6 +323,25 @@ Itens incluidos:
 - painel de detalhe do sistema selecionado;
 - tabela de endpoints criticos do sistema selecionado;
 - fila operacional priorizando `DOWN`, `SLOW` e `UNKNOWN`.
+- filtros de sistemas e endpoints;
+- verificacao manual pelo dashboard;
+- historico por endpoint;
+- edicao, ativacao/desativacao e exclusao no cadastro;
+- configuracao de status esperado, lentidao e timeout.
+
+### Fase 5 - Confiabilidade Operacional
+
+Status: implementada.
+
+Itens incluidos:
+
+- leituras antigas passam a `UNKNOWN`;
+- sistema inativo deixa de participar do agendamento;
+- bloqueio por banco evita verificacao duplicada entre instancias;
+- protecao contra destinos privados e reservados, configuravel por ambiente;
+- migracoes de banco com Flyway e indices de consulta;
+- historico paginado com limite de 100 registros por pagina;
+- healthcheck e metricas pelo Actuator/Prometheus.
 
 ## Decisoes Iniciais
 

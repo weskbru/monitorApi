@@ -5,19 +5,26 @@ Frontend do Monitor API.
 Este diretorio vai conter a aplicacao web separada do backend Spring Boot, mas
 dentro do mesmo repositorio do produto.
 
-## Stack planejada
+## Stack atual
 
 - React
 - TypeScript
 - Vite
-- Tailwind CSS
-- shadcn/ui
+- Material UI 9 e Material Icons
+- MUI X Charts para visualizacao operacional
+- Emotion para o tema e estilos tipados
+- React Router
+- TanStack Query
+- React Hook Form
+- Vitest e Testing Library
+- ESLint com regras de React Hooks e TanStack Query
 
 ## Estado atual
 
-O frontend esta sendo servido como uma tela estatica por nginx. Isso permite
-subir frontend e backend juntos com Docker enquanto a base React/Vite ainda nao
-foi criada.
+O frontend e compilado pelo Vite e servido pelo nginx. O TypeScript usa modo
+`strict`, e o backend continua sendo a fonte das regras de negocio.
+O design system parte do template oficial de marketing do Material UI, adaptado
+para uma aplicacao operacional com tema claro/escuro e navegacao responsiva.
 
 A primeira tela ja funciona como dashboard operacional:
 
@@ -27,6 +34,7 @@ A primeira tela ja funciona como dashboard operacional:
 - permite selecionar um sistema;
 - mostra os endpoints criticos do sistema selecionado;
 - destaca prioridades operacionais por sistema.
+- apresenta distribuicao de status, endpoints por sistema e tendencia de tempo de resposta.
 
 A tela de cadastro tambem ja esta disponivel:
 
@@ -49,13 +57,22 @@ URLs:
 O nginx do frontend encaminha chamadas para `/api` ao servico `api` do Docker
 Compose.
 
+## Validacao isolada com Docker
+
+```bash
+docker run --rm -v "$PWD/frontend:/app" -v /app/node_modules -w /app node:24-alpine \
+  sh -c 'npm ci && npm run lint && npm run test && npm run build'
+```
+
 ## Camadas
 
 ```text
 src/
-  app/
-  pages/
-  shared/
+  app/        inicializacao, rotas e providers
+  pages/      composicao das telas
+  features/   casos de uso e componentes por funcionalidade
+  entities/   contratos TypeScript do dominio
+  shared/     HTTP, estilos, componentes e utilitarios reutilizaveis
 ```
 
 ### `app`
@@ -72,17 +89,14 @@ Responsabilidades:
 
 Telas completas da aplicacao.
 
-Implementado agora:
+Implementado:
 
 - `pages/dashboard`: dashboard operacional;
 - `pages/register`: cadastro de sistemas e endpoints.
 
 ### `features`
 
-Camada planejada para quando a tela crescer e os fluxos precisarem sair das
-pages.
-
-Exemplos planejados:
+Organiza os componentes e a comunicacao de cada funcionalidade:
 
 - cadastrar sistema monitorado;
 - cadastrar API monitorada;
@@ -93,9 +107,7 @@ Exemplos planejados:
 
 ### `entities`
 
-Representacoes do dominio no frontend.
-
-Exemplos planejados:
+Representacoes tipadas dos contratos expostos pelo backend:
 
 - `monitored-system`;
 - `monitored-api`;
@@ -107,12 +119,10 @@ Exemplos planejados:
 
 Codigo reutilizavel e sem dependencia direta de uma regra especifica.
 
-Implementado agora:
-
-- `shared/api/http.js`: cliente HTTP simples;
-- `shared/ui/formatters.js`: helpers de data, escape HTML e badges de status;
-- constantes;
-- estilos globais.
+- `shared/api/http.ts`: cliente HTTP generico e tipado;
+- `shared/components`: componentes visuais reutilizaveis;
+- `shared/utils`: formatacao e tratamento seguro de erros;
+- estilos globais responsivos.
 
 ## Identidade visual
 

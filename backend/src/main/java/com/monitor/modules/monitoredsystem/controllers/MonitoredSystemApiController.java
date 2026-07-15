@@ -4,6 +4,10 @@ import com.monitor.modules.monitoredapi.dto.CreateMonitoredApiForSystemRequest;
 import com.monitor.modules.monitoredapi.dto.UpdateMonitoredApiActiveRequest;
 import com.monitor.modules.monitoredapi.entity.MonitoredApi;
 import com.monitor.modules.monitoredapi.service.MonitoredApiService;
+import com.monitor.modules.monitoredapi.service.ApiCheckService;
+import com.monitor.modules.monitoredapi.dto.ApiCheckResponse;
+import com.monitor.modules.monitoredapi.dto.ApiCurrentStatusResponse;
+import com.monitor.modules.monitoredapi.dto.ApiCheckHistoryResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -17,9 +21,11 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
 
 @RestController
 @RequestMapping("/api/monitored-systems/{systemId}/apis")
@@ -27,9 +33,11 @@ import java.util.List;
 public class MonitoredSystemApiController {
 
     private final MonitoredApiService monitoredApiService;
+    private final ApiCheckService apiCheckService;
 
-    public MonitoredSystemApiController(MonitoredApiService monitoredApiService) {
+    public MonitoredSystemApiController(MonitoredApiService monitoredApiService, ApiCheckService apiCheckService) {
         this.monitoredApiService = monitoredApiService;
+        this.apiCheckService = apiCheckService;
     }
 
     @PostMapping
@@ -42,13 +50,25 @@ public class MonitoredSystemApiController {
                 systemId,
                 request.getName(),
                 request.getUrl(),
-                request.getDescription());
+                request.getDescription(),
+                request.getExpectedStatusCode(),
+                request.getSlowThresholdMs(),
+                request.getTimeoutMs());
     }
 
     @GetMapping
     @Operation(summary = "Listar APIs monitoradas de um sistema")
     public List<MonitoredApi> listBySystem(@PathVariable("systemId") Long systemId) {
         return monitoredApiService.listBySystemId(systemId);
+    }
+
+    @GetMapping("/search")
+    @Operation(summary = "Buscar APIs de um sistema com paginacao")
+    public Page<MonitoredApi> searchBySystem(@PathVariable("systemId") Long systemId,
+            @RequestParam(value = "query", defaultValue = "") String query,
+            @RequestParam(value = "page", defaultValue = "0") Integer page,
+            @RequestParam(value = "size", defaultValue = "20") Integer size) {
+        return monitoredApiService.searchBySystem(systemId, query, page, size);
     }
 
     @GetMapping("/{apiId}")
@@ -70,7 +90,10 @@ public class MonitoredSystemApiController {
                 apiId,
                 request.getName(),
                 request.getUrl(),
-                request.getDescription());
+                request.getDescription(),
+                request.getExpectedStatusCode(),
+                request.getSlowThresholdMs(),
+                request.getTimeoutMs());
     }
 
     @PatchMapping("/{apiId}/active")
@@ -89,5 +112,31 @@ public class MonitoredSystemApiController {
             @PathVariable("systemId") Long systemId,
             @PathVariable("apiId") Long apiId) {
         monitoredApiService.deleteForSystem(systemId, apiId);
+    }
+
+    @PostMapping("/{apiId}/check")
+    @Operation(summary = "Verificar API monitorada do sistema")
+    public ApiCheckResponse checkForSystem(@PathVariable("systemId") Long systemId,
+            @PathVariable("apiId") Long apiId) {
+        monitoredApiService.getBySystemIdAndApiId(systemId, apiId);
+        return apiCheckService.check(apiId);
+    }
+
+    @GetMapping("/{apiId}/status")
+    @Operation(summary = "Consultar status atual da API do sistema")
+    public ApiCurrentStatusResponse getStatusForSystem(@PathVariable("systemId") Long systemId,
+            @PathVariable("apiId") Long apiId) {
+        monitoredApiService.getBySystemIdAndApiId(systemId, apiId);
+        return apiCheckService.getCurrentStatus(apiId);
+    }
+
+    @GetMapping("/{apiId}/history")
+    @Operation(summary = "Consultar historico da API do sistema")
+    public List<ApiCheckHistoryResponse> getHistoryForSystem(@PathVariable("systemId") Long systemId,
+            @PathVariable("apiId") Long apiId,
+            @RequestParam(value = "page", defaultValue = "0") Integer page,
+            @RequestParam(value = "size", defaultValue = "100") Integer size) {
+        monitoredApiService.getBySystemIdAndApiId(systemId, apiId);
+        return apiCheckService.getHistory(apiId, page, size);
     }
 }

@@ -37,7 +37,14 @@ A visao completa do produto esta em `docs/PROJECT_VISION.md`.
 - Vinculo de APIs monitoradas a sistemas monitorados.
 - Cadastro e listagem de APIs dentro de um sistema monitorado.
 - Consulta do status agregado de um sistema monitorado.
-- Dashboard frontend baseado em sistemas monitorados e endpoints por sistema.
+- Frontend React com TypeScript estrito, Vite, Material UI 9 e componentes separados por responsabilidade.
+- Configuracao de codigo HTTP esperado, limite de lentidao e timeout por endpoint.
+- Gestao completa no frontend: editar, ativar/desativar e excluir sistemas e endpoints.
+- Historico de verificacoes consultavel no dashboard.
+- Graficos operacionais com MUI X Charts para status, endpoints e tempo de resposta.
+- Expiracao de leituras antigas para evitar status `UP` obsoleto.
+- Migracoes de banco versionadas com Flyway e bloqueio distribuido do agendador.
+- Metricas e healthcheck operacional via Spring Boot Actuator.
 - Verificacao manual de disponibilidade de uma API cadastrada.
 - Classificacao da verificacao como `UP`, `SLOW` ou `DOWN`.
 - Mensagem amigavel para explicar o resultado da verificacao.
@@ -228,7 +235,10 @@ Exemplo de corpo valido:
 {
   "name": "Login",
   "url": "https://financeiro.empresa.com/api/auth/status",
-  "description": "Endpoint critico de login"
+  "description": "Endpoint critico de login",
+  "expectedStatusCode": 200,
+  "slowThresholdMs": 3000,
+  "timeoutMs": 10000
 }
 ```
 

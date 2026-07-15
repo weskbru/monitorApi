@@ -3,6 +3,8 @@ package com.monitor.modules.monitoredapi.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 
 public class CreateMonitoredApiRequest {
 
@@ -17,6 +19,17 @@ public class CreateMonitoredApiRequest {
     private Long systemId;
 
     private String description;
+
+    @Min(100)
+    @Max(599)
+    private Integer expectedStatusCode = 200;
+
+    @Min(1)
+    private Long slowThresholdMs = 3000L;
+
+    @Min(100)
+    @Max(120000)
+    private Long timeoutMs = 10000L;
 
 
     // Getters and Setters
@@ -52,5 +65,12 @@ public class CreateMonitoredApiRequest {
     public void setSystemId(Long systemId) {
         this.systemId = systemId;
     }
+
+    public Integer getExpectedStatusCode() { return expectedStatusCode; }
+    public void setExpectedStatusCode(Integer expectedStatusCode) { this.expectedStatusCode = expectedStatusCode; }
+    public Long getSlowThresholdMs() { return slowThresholdMs; }
+    public void setSlowThresholdMs(Long slowThresholdMs) { this.slowThresholdMs = slowThresholdMs; }
+    public Long getTimeoutMs() { return timeoutMs; }
+    public void setTimeoutMs(Long timeoutMs) { this.timeoutMs = timeoutMs; }
 
 }
